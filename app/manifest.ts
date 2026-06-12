@@ -2,23 +2,27 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Messages",
-    short_name: "Messages",
-    description: "An iMessage-style realtime chat PWA",
-    start_url: "/",
+    name: "Monarch",
+    short_name: "Monarch",
+    description: "Monarch — the end-to-end encrypted messenger that feels royal.",
+    start_url: "/chats",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#ffffff",
     icons: [
-      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       {
-        src: "/icon-512.png",
+        src: "/logo/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/logo/android-chrome-512x512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon-512.png",
+        src: "/logo/android-chrome-512x512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

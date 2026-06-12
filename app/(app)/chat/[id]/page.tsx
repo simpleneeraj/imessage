@@ -1,4 +1,3 @@
-import { AuthProvider } from "@/components/AuthProvider";
 import { ChatThread } from "@/components/ChatThread";
 
 // Next 16: params is a Promise and must be awaited.
@@ -8,9 +7,5 @@ export default async function ChatPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return (
-    <AuthProvider>
-      <ChatThread id={id} />
-    </AuthProvider>
-  );
+  return <ChatThread id={id} />;
 }

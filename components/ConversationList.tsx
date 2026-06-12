@@ -1,13 +1,42 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { IoChevronForward, IoCreateOutline, IoSearch } from "react-icons/io5";
 import { useAuth } from "./AuthProvider";
 import { useConversations } from "@/lib/useConversations";
+import { useSearch } from "@/lib/useSearch";
 import { listTime } from "@/lib/time";
+import {
+  getPreviews,
+  onPreviewsChange,
+  type Preview,
+} from "@/lib/previews";
 import type { Conversation } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { OfflineBanner } from "./OfflineBanner";
+import { HeaderMenu } from "./HeaderMenu";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+
+function usePreviews(): Record<string, Preview> {
+  const [previews, setPreviews] = useState<Record<string, Preview>>({});
+  useEffect(() => {
+    let mounted = true;
+    const load = () =>
+      void getPreviews().then((p) => {
+        if (mounted) setPreviews(p);
+      });
+    load();
+    const off = onPreviewsChange(load);
+    return () => {
+      mounted = false;
+      off();
+    };
+  }, []);
+  return previews;
+}
 
 function conversationTitle(conv: Conversation, me: string): string {
   const others = conv.participants.filter((p) => p.id !== me);
@@ -21,12 +50,12 @@ function RowAvatar({ conv, me }: { conv: Conversation; me: string }) {
   const others = conv.participants.filter((p) => p.id !== me);
   if (conv.is_group && others.length > 1) {
     return (
-      <div className="relative size-[45px] shrink-0">
+      <div className="relative size-11.25 shrink-0">
         <Avatar name={others[0].display_name} size={32} className="absolute left-0 top-0" />
         <Avatar
           name={others[1].display_name}
           size={28}
-          className="absolute bottom-0 right-0 ring-2 ring-white"
+          className="absolute bottom-0 right-0 ring-2 ring-background"
         />
       </div>
     );
@@ -34,74 +63,144 @@ function RowAvatar({ conv, me }: { conv: Conversation; me: string }) {
   return <Avatar name={others[0]?.display_name ?? "?"} size={45} />;
 }
 
+function Row({
+  conv,
+  me,
+  preview,
+  active,
+}: {
+  conv: Conversation;
+  me: string;
+  preview: string;
+  active: boolean;
+}) {
+  const unread = Boolean(
+    conv.last_message_at &&
+      (!conv.myLastReadAt || conv.last_message_at > conv.myLastReadAt)
+  );
+  const deletedForAll = Boolean(conv.deleted_at);
+  return (
+    <Link
+      href={`/chat/${conv.id}`}
+      className={cn(
+        "flex cursor-pointer items-center gap-3 pl-4 transition-colors hover:bg-imsg-gray/40 active:bg-imsg-gray/50",
+        active && "md:bg-imsg-gray/60",
+        deletedForAll && "opacity-50"
+      )}
+    >
+      <span className="flex w-2.5 shrink-0 justify-center">
+        {unread && (
+          <span className="size-2.5 rounded-full bg-imsg-blue" aria-label="Unread" />
+        )}
+      </span>
+      <RowAvatar conv={conv} me={me} />
+      <div className="hairline-b flex min-w-0 flex-1 items-start justify-between gap-2 py-2.5 pr-3">
+        <div className="min-w-0">
+          <p className="truncate text-[17px] font-semibold leading-5.5">
+            {conversationTitle(conv, me)}
+            {deletedForAll && (
+              <span className="ml-1 text-[13px] font-normal text-imsg-text-gray">
+                (deleted)
+              </span>
+            )}
+          </p>
+          <p className="line-clamp-2 text-[15px] leading-5 text-imsg-text-gray">
+            {preview}
+          </p>
+        </div>
+        <span className="flex shrink-0 items-center gap-1 pt-0.5 text-[15px] text-imsg-text-gray">
+          {listTime(conv.last_message_at ?? conv.created_at)}
+          <IoChevronForward className="size-3.5 text-imsg-chevron" />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export function ConversationList() {
-  const { userId, profile } = useAuth();
+  const { userId } = useAuth();
   const { conversations, loading } = useConversations(userId);
+  const previews = usePreviews();
+  const pathname = usePathname();
+  const [query, setQuery] = useState("");
+  const hits = useSearch(query, conversations, userId);
+  const searching = query.trim().length >= 2;
 
   return (
-    <div className="flex h-dvh flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-background">
       <header className="shrink-0 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between">
+        <div className="flex items-center justify-between">
           <h1 className="text-[34px] font-bold tracking-tight">Messages</h1>
-          <Link
-            href="/new"
-            aria-label="New message"
-            className="flex size-11 items-center justify-center text-imsg-blue active:opacity-60"
-          >
-            <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5" />
-              <path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z" />
-            </svg>
-          </Link>
+          <div className="flex items-center">
+            <HeaderMenu />
+            <Link
+              href="/new"
+              aria-label="New message"
+              className="flex size-11 items-center justify-center text-imsg-blue active:opacity-60"
+            >
+              <IoCreateOutline className="size-6" />
+            </Link>
+          </div>
         </div>
-        <p className="mx-auto w-full max-w-2xl pb-2 text-[13px] text-imsg-text-gray">
-          Signed in as @{profile.username}
-        </p>
+        <div className="relative pb-2 pt-1">
+          <IoSearch className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-2.5 text-imsg-text-gray" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search"
+            className="h-9 w-full rounded-[10px] bg-imsg-gray/70 pl-8 pr-3 text-[17px] outline-none placeholder:text-imsg-text-gray"
+          />
+        </div>
       </header>
 
       <OfflineBanner />
 
-      <div className="flex-1 overflow-y-auto overscroll-contain">
-        <div className="mx-auto w-full max-w-2xl">
-          {loading && conversations.length === 0 ? (
-            <div className="flex justify-center py-16">
-              <Spinner className="size-6 text-imsg-text-gray" />
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-8 py-16 text-center">
-              <p className="text-[17px] font-semibold">No Messages</p>
-              <p className="text-[15px] text-imsg-text-gray">
-                Tap the compose button to start a conversation by username.
-              </p>
-            </div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {searching ? (
+          hits.length === 0 ? (
+            <p className="px-4 py-10 text-center text-[15px] text-imsg-text-gray">
+              No results for “{query.trim()}”
+            </p>
           ) : (
-            conversations.map((conv) => (
-              <Link
-                key={conv.id}
-                href={`/chat/${conv.id}`}
-                className="flex items-center gap-3 pl-4 active:bg-imsg-gray/50"
-              >
-                <RowAvatar conv={conv} me={userId} />
-                <div className="hairline-b flex min-w-0 flex-1 items-start justify-between gap-2 py-2.5 pr-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-[17px] font-semibold leading-[22px]">
-                      {conversationTitle(conv, userId)}
-                    </p>
-                    <p className="line-clamp-2 text-[15px] leading-[20px] text-imsg-text-gray">
-                      {conv.last_message_text ?? "No messages yet"}
-                    </p>
-                  </div>
-                  <span className="flex shrink-0 items-center gap-1 pt-0.5 text-[15px] text-imsg-text-gray">
-                    {listTime(conv.last_message_at ?? conv.created_at)}
-                    <svg viewBox="0 0 24 24" className="size-3.5 text-imsg-chevron" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 5l7 7-7 7" />
-                    </svg>
-                  </span>
-                </div>
-              </Link>
+            hits.map(({ conversation, snippet }) => (
+              <Row
+                key={conversation.id}
+                conv={conversation}
+                me={userId}
+                preview={
+                  snippet ??
+                  previews[conversation.id]?.text ??
+                  "Matched conversation"
+                }
+                active={pathname === `/chat/${conversation.id}`}
+              />
             ))
-          )}
-        </div>
+          )
+        ) : loading && conversations.length === 0 ? (
+          <div className="flex justify-center py-16">
+            <Spinner className="size-6 text-imsg-text-gray" />
+          </div>
+        ) : conversations.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 px-8 py-16 text-center">
+            <p className="text-[17px] font-semibold">No Messages</p>
+            <p className="text-[15px] text-imsg-text-gray">
+              Tap the compose button to start a conversation by username.
+            </p>
+          </div>
+        ) : (
+          conversations.map((conv) => (
+            <Row
+              key={conv.id}
+              conv={conv}
+              me={userId}
+              preview={
+                previews[conv.id]?.text ??
+                (conv.last_message_at ? "Message" : "No messages yet")
+              }
+              active={pathname === `/chat/${conv.id}`}
+            />
+          ))
+        )}
       </div>
     </div>
   );

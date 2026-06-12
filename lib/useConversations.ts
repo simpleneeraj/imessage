@@ -6,7 +6,12 @@ import { idb } from "./idb";
 import type { Conversation, Profile } from "./types";
 
 type ConversationRow = Omit<Conversation, "participants"> & {
-  conversation_participants: { profiles: Profile }[];
+  conversation_participants: {
+    user_id: string;
+    last_read_at: string | null;
+    hidden_at: string | null;
+    profiles: Profile;
+  }[];
 };
 
 function sortByActivity(conversations: Conversation[]): Conversation[] {
@@ -22,20 +27,33 @@ export function useConversations(userId: string | null) {
   const refetch = useCallback(async () => {
     const { data, error } = await supabase
       .from("conversations")
-      .select("*, conversation_participants(profiles(*))")
+      .select(
+        "*, conversation_participants(user_id, last_read_at, hidden_at, profiles(*))"
+      )
       .order("updated_at", { ascending: false });
-    if (error || !data) return;
+    if (error || !data || !userId) return;
 
-    const fresh = (data as ConversationRow[]).map(
-      ({ conversation_participants, ...conv }) => ({
-        ...conv,
-        participants: conversation_participants.map((p) => p.profiles),
+    const fresh = (data as ConversationRow[])
+      .map(({ conversation_participants, ...conv }) => {
+        const mine = conversation_participants.find((p) => p.user_id === userId);
+        return {
+          ...conv,
+          participants: conversation_participants.map((p) => p.profiles),
+          myLastReadAt: mine?.last_read_at ?? null,
+          myHiddenAt: mine?.hidden_at ?? null,
+        };
       })
-    );
+      // "delete for self" hides it for me; "delete for everyone" hides it for
+      // non-admins (the admin keeps it, dimmed, to restore).
+      .filter(
+        (c) =>
+          !c.myHiddenAt &&
+          (!c.deleted_at || c.created_by === userId)
+      );
     setConversations(sortByActivity(fresh));
     setLoading(false);
     void idb.putAll("conversations", fresh);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;

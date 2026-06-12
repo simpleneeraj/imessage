@@ -10,9 +10,9 @@ import { Composer } from "@/components/Composer";
 import type { Message, Profile } from "@/lib/types";
 
 const ME = "me";
-const DUNCAN: Profile = { id: "duncan", username: "duncan_knox", display_name: "Duncan Knox" };
-const JACKELYN: Profile = { id: "jackelyn", username: "jackelyn_knox", display_name: "Jackelyn Knox" };
-const MINE: Profile = { id: ME, username: "me", display_name: "Me" };
+const DUNCAN: Profile = { id: "duncan", username: "duncan_knox", display_name: "Duncan Knox", public_key: null };
+const JACKELYN: Profile = { id: "jackelyn", username: "jackelyn_knox", display_name: "Jackelyn Knox", public_key: null };
+const MINE: Profile = { id: ME, username: "me", display_name: "Me", public_key: null };
 
 function at(hour: number, minute: number, second = 0): string {
   const d = new Date();
@@ -29,7 +29,15 @@ function msg(sender: string, body: string, time: string): Message {
     conversation_id: "preview",
     sender_id: sender,
     body,
+    text: body,
     created_at: time,
+    ephemeral: false,
+    view_once: false,
+    attachment_path: null,
+    viewed_at: null,
+    deleted_at: null,
+    edited_at: null,
+    reply_to: null,
   };
 }
 
@@ -47,12 +55,29 @@ const MESSAGES: Message[] = [
 export default function PreviewPage() {
   return (
     <div className="flex h-dvh flex-col bg-white">
-      <ChatHeader title="2 People" others={[DUNCAN, JACKELYN]} />
+      <ChatHeader
+        title="2 People"
+        others={[DUNCAN, JACKELYN]}
+        vanish={false}
+        onToggleVanish={() => {}}
+        isAdmin={false}
+        deleted={false}
+        onDeleteForMe={() => {}}
+        onDeleteForEveryone={() => {}}
+        onRestore={() => {}}
+      />
       <MessageList
         messages={MESSAGES}
         isGroup
         me={ME}
         participants={[MINE, DUNCAN, JACKELYN]}
+        reactions={new Map()}
+        participantsMeta={[]}
+        typingUserIds={[]}
+        onReact={() => {}}
+        onReply={() => {}}
+        onUnsend={() => {}}
+        onEdit={() => {}}
       />
       <Composer onSend={() => {}} />
     </div>

@@ -35,8 +35,12 @@ export async function flushOutbox(): Promise<void> {
         .insert({
           conversation_id: item.conversation_id,
           sender_id: item.sender_id,
-          body: item.body,
+          body: item.body, // already an encrypted envelope
           client_id: item.client_id,
+          ephemeral: item.ephemeral,
+          view_once: item.view_once,
+          attachment_path: item.attachment_path,
+          reply_to: item.reply_to,
         })
         .select()
         .single();

@@ -3,7 +3,7 @@
 // outbox (messages composed offline), kv (own profile, misc).
 
 const DB_NAME = "imessage-clone";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -11,18 +11,46 @@ function openDb(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
+    req.onupgradeneeded = (event) => {
       const db = req.result;
-      db.createObjectStore("conversations", { keyPath: "id" });
-      const messages = db.createObjectStore("messages", { keyPath: "id" });
-      messages.createIndex("by_conv", "conversation_id");
-      db.createObjectStore("outbox", { keyPath: "client_id" });
-      db.createObjectStore("kv");
+      if (event.oldVersion < 1) {
+        db.createObjectStore("conversations", { keyPath: "id" });
+        const messages = db.createObjectStore("messages", { keyPath: "id" });
+        messages.createIndex("by_conv", "conversation_id");
+        db.createObjectStore("outbox", { keyPath: "client_id" });
+        db.createObjectStore("kv");
+      }
+      if (event.oldVersion < 2) {
+        // v2 = E2EE cutover: anonymous-era plaintext caches are disposable.
+        db.createObjectStore("convkeys", { keyPath: "conversation_id" });
+        const tx = req.transaction!;
+        for (const store of ["conversations", "messages", "outbox", "kv"]) {
+          tx.objectStore(store).clear();
+        }
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
   return dbPromise;
+}
+
+/** Close and permanently delete the local database (logout). */
+export async function destroyDb(): Promise<void> {
+  if (dbPromise) {
+    try {
+      (await dbPromise).close();
+    } catch {
+      // already closed
+    }
+    dbPromise = null;
+  }
+  await new Promise<void>((resolve) => {
+    const req = indexedDB.deleteDatabase(DB_NAME);
+    req.onsuccess = () => resolve();
+    req.onerror = () => resolve();
+    req.onblocked = () => resolve();
+  });
 }
 
 function promisify<T>(req: IDBRequest<T>): Promise<T> {
@@ -32,7 +60,7 @@ function promisify<T>(req: IDBRequest<T>): Promise<T> {
   });
 }
 
-type StoreName = "conversations" | "messages" | "outbox" | "kv";
+type StoreName = "conversations" | "messages" | "outbox" | "kv" | "convkeys";
 
 async function withStore<T>(
   name: StoreName,

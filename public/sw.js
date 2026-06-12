@@ -8,7 +8,7 @@
 //     that page, then to /offline.
 // Bump VERSION to invalidate all caches on the next deploy.
 
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const PRECACHE_URLS = ["/offline", "/icon-192.png", "/icon-512.png"];

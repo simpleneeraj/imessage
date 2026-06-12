@@ -10,13 +10,17 @@ import {
 import { supabase } from "@/lib/supabase";
 import { idb } from "@/lib/idb";
 import { wireOutbox } from "@/lib/outbox";
+import { getPrivateKey } from "@/lib/keys";
+import { signOut } from "@/lib/auth";
 import type { Profile } from "@/lib/types";
-import { UsernameGate } from "./UsernameGate";
+import { AuthGate } from "./AuthGate";
 import { Spinner } from "@/components/ui/spinner";
 
 type AuthContextValue = {
   userId: string;
   profile: Profile;
+  logout: () => Promise<void>;
+  updateProfile: (patch: Partial<Profile>) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -28,78 +32,60 @@ export function useAuth(): AuthContextValue {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [phase, setPhase] = useState<"loading" | "gate" | "ready" | "error">(
-    "loading"
-  );
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [phase, setPhase] = useState<"loading" | "gate" | "ready">("loading");
 
   useEffect(() => {
     let cancelled = false;
 
     async function bootstrap() {
-      try {
-        let {
-          data: { session },
-        } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        if (!session) {
-          const { data, error } = await supabase.auth.signInAnonymously();
-          if (error) throw error;
-          session = data.session;
-        }
-        if (!session) throw new Error("Could not establish a session");
-        if (cancelled) return;
+      if (!session) {
+        if (!cancelled) setPhase("gate");
+        return;
+      }
 
-        const uid = session.user.id;
-        setUserId(uid);
-        // Make sure the realtime connection carries the auth token so
-        // RLS-filtered postgres_changes events are delivered.
+      // A session without the local private key can't decrypt anything —
+      // the password (→ encKey) is needed to restore the backup, so re-auth.
+      const [localProfile, privateKey] = await Promise.all([
+        idb.kvGet<Profile>("profile"),
+        getPrivateKey(),
+      ]);
+      if (cancelled) return;
+
+      if (localProfile && localProfile.id === session.user.id && privateKey) {
         await supabase.realtime.setAuth();
-
-        const cached = await idb.kvGet<Profile>("profile");
-        if (cached && cached.id === uid && !cancelled) {
-          setProfile(cached);
-          setPhase("ready");
-        }
-
-        const { data: row, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", uid)
-          .maybeSingle();
-        if (cancelled) return;
-
-        if (row) {
-          setProfile(row as Profile);
-          setPhase("ready");
-          void idb.kvSet("profile", row);
-        } else if (!profileError && !cached) {
-          setPhase("gate");
-        } else if (profileError && !cached) {
-          // Offline with no cached profile — nothing to render yet.
-          throw new Error(
-            "Could not load your profile. Check your connection and reload."
-          );
-        }
-      } catch (err) {
-        if (cancelled) return;
-        setErrorMessage(err instanceof Error ? err.message : String(err));
-        setPhase("error");
+        setProfile(localProfile);
+        setPhase("ready");
+      } else {
+        await supabase.auth.signOut();
+        setPhase("gate");
       }
     }
 
     void bootstrap();
     wireOutbox();
 
-    if (
-      process.env.NODE_ENV === "production" &&
-      "serviceWorker" in navigator
-    ) {
-      void navigator.serviceWorker.register("/sw.js", {
-        updateViaCache: "none",
-      });
+    if ("serviceWorker" in navigator) {
+      if (process.env.NODE_ENV === "production") {
+        void navigator.serviceWorker.register("/sw.js", {
+          updateViaCache: "none",
+        });
+      } else {
+        // In dev, tear down any service worker left over from a prior
+        // production run — otherwise it keeps serving stale /_next chunks.
+        void navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) => regs.forEach((r) => void r.unregister()));
+        if ("caches" in window) {
+          void caches.keys().then((keys) =>
+            keys.forEach((k) => void caches.delete(k))
+          );
+        }
+      }
     }
 
     return () => {
@@ -107,37 +93,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const handleProfileCreated = useCallback((created: Profile) => {
-    setProfile(created);
+  const handleReady = useCallback((p: Profile) => {
+    setProfile(p);
     setPhase("ready");
-    void idb.kvSet("profile", created);
+  }, []);
+
+  const logout = useCallback(async () => {
+    await signOut();
+  }, []);
+
+  const updateProfile = useCallback((patch: Partial<Profile>) => {
+    setProfile((cur) => {
+      if (!cur) return cur;
+      const next = { ...cur, ...patch };
+      void idb.kvSet("profile", next);
+      return next;
+    });
   }, []);
 
   if (phase === "loading") {
     return (
-      <div className="flex h-dvh items-center justify-center">
+      <div className="flex h-dvh items-center justify-center bg-background">
         <Spinner className="size-6 text-imsg-text-gray" />
       </div>
     );
   }
 
-  if (phase === "error") {
-    return (
-      <div className="flex h-dvh flex-col items-center justify-center gap-2 px-8 text-center">
-        <p className="text-[17px] font-semibold">Something went wrong</p>
-        <p className="text-[15px] text-imsg-text-gray">{errorMessage}</p>
-      </div>
-    );
+  if (phase === "gate") {
+    return <AuthGate onReady={handleReady} />;
   }
 
-  if (phase === "gate" && userId) {
-    return <UsernameGate userId={userId} onCreated={handleProfileCreated} />;
-  }
-
-  if (!userId || !profile) return null;
+  if (!profile) return null;
 
   return (
-    <AuthContext.Provider value={{ userId, profile }}>
+    <AuthContext.Provider
+      value={{ userId: profile.id, profile, logout, updateProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );

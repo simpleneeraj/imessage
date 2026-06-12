@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { createConvKey } from "@/lib/keys";
 import { useAuth } from "./AuthProvider";
 import type { Profile } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { Spinner } from "@/components/ui/spinner";
 
 export function NewChat() {
-  const { userId } = useAuth();
+  const { userId, profile } = useAuth();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Profile[]>([]);
@@ -33,6 +34,7 @@ export function NewChat() {
           .select("*")
           .ilike("username", `${term}%`)
           .neq("id", userId)
+          .not("public_key", "is", null) // legacy users can't receive E2EE messages
           .limit(8);
         setResults((data as Profile[]) ?? []);
       },
@@ -63,14 +65,23 @@ export function NewChat() {
       setError(rpcError?.message ?? "Could not create the conversation.");
       return;
     }
-    router.replace(`/chat/${data as string}`);
+    const convId = data as string;
+    // Generate + grant the E2EE conversation key (no-op if the RPC reused
+    // an existing 1:1 that already has one).
+    const key = await createConvKey(convId, [...selected, profile], userId);
+    if (!key) {
+      setCreating(false);
+      setError("Could not set up encryption for this conversation.");
+      return;
+    }
+    router.replace(`/chat/${convId}`);
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-background">
       <header className="hairline-b shrink-0 bg-imsg-bar/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className="mx-auto grid w-full max-w-2xl grid-cols-[1fr_auto_1fr] items-center px-4 py-3">
-          <Link href="/" className="justify-self-start text-[17px] text-imsg-blue active:opacity-60">
+          <Link href="/chats" className="justify-self-start text-[17px] text-imsg-blue active:opacity-60">
             Cancel
           </Link>
           <h1 className="text-[17px] font-semibold">New Message</h1>
