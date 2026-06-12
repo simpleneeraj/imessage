@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# iMessage Clone — Next.js 16 + Supabase Realtime PWA
 
-## Getting Started
+A pixel-perfect iMessage clone: realtime 1:1 and group chat, installable PWA with
+offline message viewing and an offline outbox that sends queued messages on reconnect.
 
-First, run the development server:
+## Setup (one time)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **Create a Supabase project** at [database.new](https://database.new) (or use an existing one).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Enable anonymous sign-ins**
+   Dashboard → Authentication → Sign In / Up → enable **"Allow anonymous sign-ins"**.
+   (Sign-in is a frictionless username picker; identity is an anonymous Supabase user.)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Run the schema**
+   Dashboard → SQL Editor → paste the entire contents of [`supabase/schema.sql`](./supabase/schema.sql) → Run.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **Environment variables**
+   Copy `.env.example` to `.env.local` and fill in your project URL and publishable/anon key
+   (Dashboard → Project Settings → API Keys). Never use the service_role key here.
 
-## Learn More
+5. **Install & run**
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+## Trying it out
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open the app in two different browser profiles (or one normal + one incognito window),
+pick a username in each, then start a chat from the compose button using the other
+profile's username. Add two or more usernames to create a group.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Offline support
 
-## Deploy on Vercel
+- The app shell is cached by a service worker (production builds only).
+- Conversations and messages are mirrored to IndexedDB, so previously viewed chats
+  render while offline.
+- Messages composed offline are queued in an outbox and sent automatically on
+  reconnect (idempotent via a `client_id` unique key, so nothing sends twice).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+To test: `npm run build && npm start`, open the app, then DevTools → Network → Offline.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+
+- Anonymous sessions live in this browser profile only — clearing site data creates a
+  new identity (old username stays taken).
+- Realtime uses Postgres Changes with RLS, so subscribers only ever receive rows from
+  conversations they participate in.
