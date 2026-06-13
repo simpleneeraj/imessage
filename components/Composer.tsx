@@ -126,17 +126,31 @@ export function Composer({
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }
 
-  function stage(file: File) {
+  async function stage(file: File) {
     setError('');
     if (file.size > MAX_FILE_BYTES) {
       setError(`Files up to ${formatBytes(MAX_FILE_BYTES)} are supported.`);
       return;
     }
+    // Read the bytes NOW, while the picked-file reference is still valid, and
+    // keep an in-memory copy. On iOS the original File handle can go stale by
+    // the time we encrypt/upload (NotReadableError), so we never read it twice.
+    let stable: File;
+    try {
+      const bytes = await file.arrayBuffer();
+      stable = new File([bytes], file.name, {
+        type: file.type,
+        lastModified: file.lastModified,
+      });
+    } catch {
+      setError('Could not read that file. Please pick it again.');
+      return;
+    }
     setStaged({
-      file,
+      file: stable,
       viewOnce: false,
-      previewUrl: file.type.startsWith('image/')
-        ? URL.createObjectURL(file)
+      previewUrl: stable.type.startsWith('image/')
+        ? URL.createObjectURL(stable)
         : null,
     });
   }
@@ -307,7 +321,7 @@ export function Composer({
             hidden
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) stage(file);
+              if (file) void stage(file);
               e.target.value = '';
             }}
           />

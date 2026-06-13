@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@supabase-cache-helpers/postgrest-swr";
 import { supabase } from "@/lib/supabase";
 import { createConvKey } from "@/lib/keys";
+import { useDebounce } from "@/lib/useDebounce";
 import { useAuth } from "./AuthProvider";
 import type { Profile } from "@/lib/types";
 import { Avatar } from "./Avatar";
@@ -14,41 +16,37 @@ export function NewChat() {
   const { userId, profile } = useAuth();
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Profile[]>([]);
   const [selected, setSelected] = useState<Profile[]>([]);
   const [groupName, setGroupName] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const term = query.trim();
-    const timer = setTimeout(
-      async () => {
-        if (term.length < 2) {
-          setResults([]);
-          return;
-        }
-        const { data } = await supabase
+  const term = query.trim();
+  const debounced = useDebounce(term, 200);
+
+  // Username search via SWR (cached + deduped). RLS scopes results to the
+  // caller's tenant; `public_key is not null` filters legacy non-E2EE users.
+  const { data } = useQuery<Profile>(
+    debounced.length >= 2
+      ? supabase
           .from("profiles")
           .select("*")
-          .ilike("username", `${term}%`)
+          .ilike("username", `${debounced}%`)
           .neq("id", userId)
-          .not("public_key", "is", null) // legacy users can't receive E2EE messages
-          .limit(8);
-        setResults((data as Profile[]) ?? []);
-      },
-      term.length < 2 ? 0 : 200
-    );
-    return () => clearTimeout(timer);
-  }, [query, userId]);
+          .not("public_key", "is", null)
+          .limit(8)
+      : null
+  );
+  // Gate the display on the *current* term so clearing hides results instantly,
+  // even before the debounced value catches up.
+  const results: Profile[] = term.length >= 2 ? (data ?? []) : [];
 
   function addRecipient(profile: Profile) {
     if (!selected.some((p) => p.id === profile.id)) {
       setSelected([...selected, profile]);
     }
     setQuery("");
-    setResults([]);
     inputRef.current?.focus();
   }
 
@@ -126,7 +124,7 @@ export function NewChat() {
             autoCapitalize="none"
             autoCorrect="off"
             autoFocus
-            className="min-w-[120px] flex-1 bg-transparent py-1 text-[17px] outline-none placeholder:text-imsg-text-gray"
+            className="min-w-30 flex-1 bg-transparent py-1 text-[17px] outline-none placeholder:text-imsg-text-gray"
           />
         </div>
 

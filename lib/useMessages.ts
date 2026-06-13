@@ -32,6 +32,9 @@ export function previewText(msg: Message): string {
         ? "📹 Video"
         : "📎 Attachment";
   }
+  if (msg.payload?.kind === "call") {
+    return msg.payload.media === "video" ? "📹 Video call" : "📞 Voice call";
+  }
   return msg.text ?? "Message";
 }
 
@@ -46,7 +49,7 @@ async function decryptMessage(msg: Message): Promise<Message> {
     return {
       ...msg,
       payload,
-      text: payload.kind === "file" ? "" : payload.text,
+      text: "text" in payload ? payload.text : "",
     };
   } catch {
     return { ...msg, text: null }; // wrong key / corrupt
@@ -339,7 +342,7 @@ export function useMessages(conversationId: string, userId: string | null) {
       const body = await encryptEnvelope(payload, convKey, conversationId);
       const client_id = crypto.randomUUID();
       const offline = !navigator.onLine;
-      const text = payload.kind === "file" ? "" : payload.text;
+      const text = "text" in payload ? payload.text : "";
       const optimistic: Message = {
         id: client_id,
         conversation_id: conversationId,

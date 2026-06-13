@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { ConversationList } from './ConversationList';
+import { useViewportHeight } from '@/lib/useViewportHeight';
 
 // Desktop: persistent 380px sidebar + detail pane (iMessage on macOS).
 // Mobile: sidebar IS the home screen; thread routes take the full screen.
@@ -11,9 +12,14 @@ import { ConversationList } from './ConversationList';
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const inDetail = pathname !== '/chats';
+  useViewportHeight();
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div
+      className="flex overflow-hidden bg-background"
+      // visual-viewport height (keyboard-aware); dvh is the pre-hydration fallback
+      style={{ height: 'var(--app-height, 100dvh)' }}
+    >
       <aside
         className={cn(
           'w-full flex-col md:flex md:w-95 md:shrink-0 md:border-r md:border-imsg-separator/50',

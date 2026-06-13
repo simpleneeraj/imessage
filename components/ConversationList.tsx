@@ -17,6 +17,7 @@ import type { Conversation } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { OfflineBanner } from "./OfflineBanner";
 import { HeaderMenu } from "./HeaderMenu";
+import { InviteCard } from "./InviteCard";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -181,12 +182,16 @@ export function ConversationList() {
             <Spinner className="size-6 text-imsg-text-gray" />
           </div>
         ) : conversations.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-8 py-16 text-center">
-            <p className="text-[17px] font-semibold">No Messages</p>
-            <p className="text-[15px] text-imsg-text-gray">
-              Tap the compose button to start a conversation by username.
-            </p>
-          </div>
+          <InviteCard
+            fallback={
+              <div className="flex flex-col items-center gap-2 px-8 py-16 text-center">
+                <p className="text-[17px] font-semibold">No Messages</p>
+                <p className="text-[15px] text-imsg-text-gray">
+                  Tap the compose button to start a conversation by username.
+                </p>
+              </div>
+            }
+          />
         ) : (
           conversations.map((conv) => (
             <Row

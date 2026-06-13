@@ -1,10 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { slugFromHost } from "@/lib/tenant";
 
-// Refreshes the Supabase auth session on every matched request and forwards
-// the refreshed cookies to both the browser and downstream Server Components.
+// Refreshes the Supabase auth session on every matched request, forwards the
+// refreshed cookies to both the browser and downstream Server Components, and
+// stamps the resolved tenant slug onto an `x-tenant` request header so Server
+// Components can read the active space via next/headers.
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const slug = slugFromHost(request.headers.get("host"));
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-tenant", slug ?? "");
+
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +25,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          response = NextResponse.next({ request });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );

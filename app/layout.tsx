@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from 'next-themes';
+import { THEMES, DEFAULT_THEME } from '@/lib/themes';
 import './globals.css';
 import { Inter, Geist_Mono } from 'next/font/google';
 import { cn } from '@/lib/utils';
@@ -70,6 +71,9 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
+  // Let the on-screen keyboard shrink the layout viewport so fixed chrome
+  // (the chat header) stays put instead of scrolling out of view.
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({
@@ -90,7 +94,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-full bg-background text-foreground">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider
+          attribute="class"
+          themes={THEMES}
+          defaultTheme={DEFAULT_THEME}
+          enableColorScheme={false}
+          disableTransitionOnChange
+        >
           {children}
         </ThemeProvider>
       </body>

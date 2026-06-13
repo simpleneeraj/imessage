@@ -10,21 +10,55 @@ import {
   exportPublicKey,
   generateIdentityKeyPair,
 } from './crypto';
+import slugify from 'slugify';
 import type { Profile } from './types';
+import { clientTenantSlug } from './tenant';
 
 // Synthetic domain for username->email mapping. Must pass GoTrue's email
-// validation; example.com is RFC-reserved so nothing is ever deliverable,
-// and with "Confirm email" disabled nothing is ever sent.
+// validation; example.com is RFC-reserved so nothing is ever deliverable, and
+// with "Confirm email" disabled nothing is ever sent. The tenant slug is folded
+// in as a subdomain so the same username can exist in two different spaces.
 const EMAIL_DOMAIN = 'example.com';
 export const USERNAME_RE = /^[a-zA-Z0-9_]{2,24}$/;
 export const MIN_PASSWORD_LENGTH = 8;
 
 export type AuthResult =
   | { ok: true; profile: Profile }
-  | { ok: false; error: string };
+  // `code: 'exists'` = the account is already registered (→ try sign-in).
+  | { ok: false; error: string; code?: 'exists' | 'no-space' };
 
-function syntheticEmail(username: string): string {
-  return `${username.toLowerCase()}@${EMAIL_DOMAIN}`;
+const NO_SPACE_ERROR =
+  'Open this app from your space, e.g. https://your-space.chat.cutecode.app';
+
+// A person's display name IS their identity within a space: the username is
+// slugify(name) with '_' separators so it matches USERNAME_RE. Returns null if
+// the name has no usable letters/numbers (e.g. emoji-only).
+export function slugifyUsername(name: string): string | null {
+  const u = slugify(name ?? '', { lower: true, strict: true, replacement: '_' })
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 24)
+    .replace(/_+$/g, '');
+  return USERNAME_RE.test(u) ? u : null;
+}
+
+function syntheticEmail(username: string, slug: string): string {
+  return `${username.toLowerCase()}@${slug}.${EMAIL_DOMAIN}`;
+}
+
+// Tenant-qualified identity → the KDF (auth password + encryption key) is scoped
+// per space, so the same username/password in two spaces stays fully distinct.
+function tenantIdentity(slug: string, username: string): string {
+  return `${slug}:${username.toLowerCase()}`;
+}
+
+async function resolveTenantId(slug: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('tenants')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
 }
 
 async function persistLocal(profile: Profile, privateKey: CryptoKey) {
@@ -32,34 +66,27 @@ async function persistLocal(profile: Profile, privateKey: CryptoKey) {
   await idb.kvSet('privateKey', privateKey);
 }
 
-export async function signUp(
+type Derived = { authPassword: string; encKey: CryptoKey };
+
+// Create a brand-new account in the space (member #1, or #2 with an invite).
+async function attemptSignUp(
+  name: string,
   username: string,
-  password: string,
-  displayName?: string,
+  slug: string,
+  tenantId: string,
+  { authPassword, encKey }: Derived,
+  inviteToken?: string,
 ): Promise<AuthResult> {
-  if (!USERNAME_RE.test(username)) {
-    return {
-      ok: false,
-      error: 'Username must be 2–24 letters, numbers or underscores.',
-    };
-  }
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { ok: false, error: 'Password must be at least 8 characters.' };
-  }
-
-  const { authPassword, encKey } = await deriveKeys(username, password);
-
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-    email: syntheticEmail(username),
+    email: syntheticEmail(username, slug),
     password: authPassword,
   });
   if (signUpError) {
-    return {
-      ok: false,
-      error: /already registered/i.test(signUpError.message)
-        ? 'That username is already taken.'
-        : signUpError.message,
-    };
+    // The account already exists → caller falls back to sign-in.
+    if (/already registered/i.test(signUpError.message)) {
+      return { ok: false, error: 'That name is already taken.', code: 'exists' };
+    }
+    return { ok: false, error: signUpError.message };
   }
   const userId = signUpData.user?.id;
   if (!userId || !signUpData.session) {
@@ -70,6 +97,23 @@ export async function signUp(
     };
   }
 
+  // The 2nd member must redeem the invite (claims the single open slot) before
+  // their profile row will pass the cap trigger.
+  if (inviteToken) {
+    const { error: redeemError } = await supabase.rpc('redeem_invite', {
+      p_slug: slug,
+      p_token: inviteToken,
+    });
+    if (redeemError) {
+      return {
+        ok: false,
+        error: /full/i.test(redeemError.message)
+          ? 'This space is full (2/2).'
+          : 'This invite link is invalid or has already been used.',
+      };
+    }
+  }
+
   const keyPair = await generateIdentityKeyPair();
   const publicKey = await exportPublicKey(keyPair.publicKey);
 
@@ -77,8 +121,9 @@ export async function signUp(
     .from('profiles')
     .insert({
       id: userId,
-      username: username.toLowerCase(),
-      display_name: displayName,
+      tenant_id: tenantId,
+      username,
+      display_name: name.trim(),
       public_key: publicKey,
     })
     .select()
@@ -88,8 +133,12 @@ export async function signUp(
       ok: false,
       error:
         profileError.code === '23505'
-          ? 'That username is already taken.'
-          : profileError.message,
+          ? 'That name is already taken.'
+          : /invite/i.test(profileError.message)
+            ? 'An invite link is required to join this space.'
+            : /full/i.test(profileError.message)
+              ? 'This space is full (2/2).'
+              : profileError.message,
     };
   }
 
@@ -107,18 +156,18 @@ export async function signUp(
   return { ok: true, profile: profile as Profile };
 }
 
-export async function signIn(
+// Log a returning member back in (restores their E2EE keys from the backup).
+async function attemptSignIn(
   username: string,
-  password: string,
+  slug: string,
+  { authPassword, encKey }: Derived,
 ): Promise<AuthResult> {
-  const { authPassword, encKey } = await deriveKeys(username, password);
-
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: syntheticEmail(username),
+    email: syntheticEmail(username, slug),
     password: authPassword,
   });
   if (error || !data.user) {
-    return { ok: false, error: 'Wrong username or password.' };
+    return { ok: false, error: 'Wrong password.' };
   }
   const userId = data.user.id;
 
@@ -180,6 +229,54 @@ export async function signIn(
   await persistLocal(profile as Profile, privateKey);
   await supabase.realtime.setAuth();
   return { ok: true, profile: profile as Profile };
+}
+
+// Single entry point: have an account → log in; don't → create one. The name
+// is the identity (username = slugify(name)); we sign-up-first because it's the
+// only reliable "does this account exist?" signal and creates nothing on error.
+export async function authenticate(
+  name: string,
+  password: string,
+  inviteToken?: string,
+): Promise<AuthResult> {
+  const username = slugifyUsername(name);
+  if (!username) {
+    return {
+      ok: false,
+      error: 'Please enter a name with at least 2 letters or numbers.',
+    };
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return { ok: false, error: 'Password must be at least 8 characters.' };
+  }
+
+  const slug = clientTenantSlug();
+  if (!slug) return { ok: false, error: NO_SPACE_ERROR, code: 'no-space' };
+  const tenantId = await resolveTenantId(slug);
+  if (!tenantId) {
+    return { ok: false, error: 'This space doesn’t exist yet.', code: 'no-space' };
+  }
+
+  // PBKDF2 is expensive — derive once and reuse for whichever path we take.
+  const derived = await deriveKeys(tenantIdentity(slug, username), password);
+
+  const created = await attemptSignUp(
+    name,
+    username,
+    slug,
+    tenantId,
+    derived,
+    inviteToken,
+  );
+  if (created.ok || created.code !== 'exists') return created;
+
+  // Account already exists → returning member; log them in.
+  const signedIn = await attemptSignIn(username, slug, derived);
+  if (signedIn.ok) return signedIn;
+  return {
+    ok: false,
+    error: `Wrong password for “${name.trim()}” in this space.`,
+  };
 }
 
 export async function signOut(): Promise<void> {

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useTheme } from 'next-themes';
+import { useAppTheme } from '@/lib/useAppTheme';
 import {
   IoChevronBack,
   IoChevronForward,
@@ -14,8 +14,11 @@ import {
   IoTimerOutline,
   IoTrashOutline,
   IoArrowUndoOutline,
+  IoVideocamOutline,
+  IoCallOutline,
 } from 'react-icons/io5';
 import type { Profile } from '@/lib/types';
+import { useCall } from './CallProvider';
 import { Avatar } from './Avatar';
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from '@/components/ui/menu';
 import { iosMenu, iosMenuItem } from '@/components/ui/ios-menu';
@@ -26,6 +29,7 @@ const menu = iosMenu();
 export function ChatHeader({
   title,
   others,
+  conversationId,
   onOpenDetails,
   onOpenTheme,
   onOpenPasscode,
@@ -40,6 +44,7 @@ export function ChatHeader({
 }: {
   title: string;
   others: Profile[];
+  conversationId: string;
   onOpenDetails?: () => void;
   onOpenTheme?: () => void;
   onOpenPasscode?: () => void;
@@ -52,9 +57,14 @@ export function ChatHeader({
   onDeleteForEveryone: () => void;
   onRestore: () => void;
 }) {
-  const { resolvedTheme, setTheme } = useTheme();
-  // undefined during SSR/first paint → hydration-safe without a mounted flag
-  const isDark = resolvedTheme === 'dark';
+  const { isDark, toggleMode } = useAppTheme();
+
+  // 1:1 calls only (spaces are two people); no group calling.
+  const { startCall, status: callStatus } = useCall();
+  const callPeer =
+    others.length === 1
+      ? { id: others[0].id, name: others[0].display_name }
+      : null;
 
   // Groups can have 100+ members — show two avatars and roll the rest into
   // a "+N" badge (capped at 99+).
@@ -117,10 +127,30 @@ export function ChatHeader({
             <MenuPopup align="end" sideOffset={6} className={menu.popup()}>
               <div className={menu.card({ class: 'w-62' })}>
                 <div className={menu.group()}>
-                  <MenuItem onClick={onOpenDetails} className={iosMenuItem()}>
-                    Chat Info
-                    <IoInformationCircleOutline className="size-5.5 text-foreground" />
-                  </MenuItem>
+                  {callPeer && (
+                    <>
+                      <MenuItem
+                        onClick={() =>
+                          startCall(callPeer, 'video', conversationId)
+                        }
+                        disabled={callStatus !== 'idle'}
+                        className={iosMenuItem()}
+                      >
+                        Video Call
+                        <IoVideocamOutline className="size-5.5 text-foreground" />
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() =>
+                          startCall(callPeer, 'audio', conversationId)
+                        }
+                        disabled={callStatus !== 'idle'}
+                        className={iosMenuItem()}
+                      >
+                        Voice Call
+                        <IoCallOutline className="size-5.5 text-foreground" />
+                      </MenuItem>
+                    </>
+                  )}
 
                   <MenuItem onClick={onOpenTheme} className={iosMenuItem()}>
                     Change Theme
@@ -162,7 +192,7 @@ export function ChatHeader({
 
                   <MenuItem
                     closeOnClick={false}
-                    onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                    onClick={toggleMode}
                     className={iosMenuItem()}
                   >
                     {isDark ? 'Light Mode' : 'Dark Mode'}
@@ -173,7 +203,10 @@ export function ChatHeader({
                     )}
                   </MenuItem>
                 </div>
-
+                <MenuItem onClick={onOpenDetails} className={iosMenuItem()}>
+                  Chat Info
+                  <IoInformationCircleOutline className="size-5.5 text-foreground" />
+                </MenuItem>
                 {/* iOS thick group separator before destructive actions */}
                 <div className={menu.separator()} />
 

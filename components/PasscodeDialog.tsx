@@ -64,7 +64,9 @@ export function PasscodeDialog({
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(o) : close())}>
       <DialogPopup className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{hasPasscode ? 'Change Passcode' : 'Set Passcode'}</DialogTitle>
+          <DialogTitle>
+            {hasPasscode ? 'Change Passcode' : 'Set Passcode'}
+          </DialogTitle>
           <DialogDescription>
             Locks this chat behind a 4-digit code — only on your account.
           </DialogDescription>
@@ -84,22 +86,31 @@ export function PasscodeDialog({
           </OTPField>
         </DialogPanel>
         <DialogFooter>
-          {hasPasscode && (
-            <Button
-              variant="destructive"
-              disabled={busy}
-              onClick={() => void remove()}
-              className="sm:mr-auto"
-            >
-              Remove Passcode
-            </Button>
-          )}
-          <Button variant="outline" onClick={close}>
-            Cancel
-          </Button>
-          <Button disabled={code.length !== 4 || busy} onClick={() => void save()}>
-            {hasPasscode ? 'Update' : 'Set Passcode'}
-          </Button>
+          <div className="flex flex-col flex-1 gap-2">
+            {hasPasscode && (
+              <Button
+                variant="destructive"
+                disabled={busy}
+                onClick={() => void remove()}
+                className="w-full"
+              >
+                Remove Passcode
+              </Button>
+            )}
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={close} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                disabled={code.length !== 4 || busy}
+                onClick={() => void save()}
+                className="flex-1"
+              >
+                {hasPasscode ? 'Update' : 'Set Passcode'}
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogPopup>
     </Dialog>

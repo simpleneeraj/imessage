@@ -54,14 +54,23 @@ export function buildRows(
       rows.push({ type: "separator", key: `sep-${msg.client_id}`, at: msg.created_at });
     }
 
+    // Vibe expressions and call records render as standalone centered rows, so
+    // they always break the bubble grouping on both sides.
+    const isStandalone = (m: Message | undefined) =>
+      m?.payload?.kind === "expression" || m?.payload?.kind === "call";
+
     const isFirstInGroup =
       needsSeparator ||
       !prev ||
+      isStandalone(msg) ||
+      isStandalone(prev) ||
       prev.sender_id !== msg.sender_id ||
       at.getTime() - new Date(prev.created_at).getTime() > GROUP_GAP_MS;
 
     const nextStartsNewGroup =
       !next ||
+      isStandalone(msg) ||
+      isStandalone(next) ||
       next.sender_id !== msg.sender_id ||
       new Date(next.created_at).getTime() - at.getTime() > GROUP_GAP_MS ||
       !sameDay(new Date(next.created_at), at) ||

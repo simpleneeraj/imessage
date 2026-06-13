@@ -1,351 +1,208 @@
 'use client';
 
 import { z } from 'zod';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { motion, AnimatePresence } from 'motion/react';
-import { signIn, signUp } from '@/lib/auth';
+import { motion } from 'motion/react';
+import {
+  IoEyeOutline,
+  IoEyeOffOutline,
+  IoAlertCircle,
+  IoLockClosed,
+  IoArrowForward,
+} from 'react-icons/io5';
+import { authenticate, slugifyUsername } from '@/lib/auth';
+import { clientTenantSlug, ROOT_HOST } from '@/lib/tenant';
 import type { Profile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldError } from '@/components/ui/field';
-import { Spinner } from '@/components/ui/spinner';
-import { Tabs, TabsList, TabsTab } from '@/components/ui/tabs';
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+} from '@/components/ui/input-group';
+import {
+  Field,
+  FieldLabel,
+  FieldError,
+  FieldDescription,
+} from '@/components/ui/field';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-type Mode = 'signin' | 'signup';
-
-const signinSchema = z.object({
-  username: z.string().min(3, 'Username is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+const schema = z.object({
+  name: z.string().min(2, 'Please enter your name'),
+  password: z.string().min(8, 'At least 8 characters'),
 });
+type FormValues = { name: string; password: string };
 
-const signupSchema = signinSchema.extend({
-  displayName: z.string().min(2, 'Please enter your name'),
-});
-
-type AuthFormValues = {
-  displayName?: string;
-  username: string;
-  password: string;
-};
-
-export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
-  const [mode, setMode] = useState<Mode>('signin');
+// One unified flow: enter your name + a password. If the account exists we sign
+// you in; if not we create it. Your name is your identity in the space.
+export function AuthGate({
+  onReady,
+  inviteToken,
+}: {
+  onReady: (profile: Profile) => void;
+  inviteToken?: string;
+}) {
+  const invited = Boolean(inviteToken);
   const [serverError, setServerError] = useState('');
-
-  const schema = useMemo(
-    () => (mode === 'signin' ? signinSchema : signupSchema),
-    [mode],
-  );
+  const [showPassword, setShowPassword] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  // AuthGate only mounts client-side (after AuthProvider's bootstrap).
+  const slug = clientTenantSlug();
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
-  } = useForm<AuthFormValues>({
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      username: '',
-      password: '',
-      displayName: '',
-    },
+    defaultValues: { name: '', password: '' },
   });
 
-  async function onSubmit(values: AuthFormValues) {
+  // live preview of the derived @handle
+  const handle = slugifyUsername(nameValue);
+
+  async function onSubmit(values: FormValues) {
     setServerError('');
-
-    const result =
-      mode === 'signup'
-        ? await signUp(values.username, values.password, values.displayName)
-        : await signIn(values.username, values.password);
-
+    const result = await authenticate(values.name, values.password, inviteToken);
     if (!result.ok) {
       setServerError(result.error);
       return;
     }
-
     onReady(result.profile);
   }
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background px-6">
+    <div className="flex min-h-dvh items-center justify-center overflow-y-auto bg-background px-4 py-8">
       <motion.div
-        initial={{
-          opacity: 0,
-          scale: 0.96,
-          y: 30,
-        }}
-        animate={{
-          opacity: 1,
-          scale: 1,
-          y: 0,
-        }}
-        transition={{
-          duration: 0.5,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-        className="w-full max-w-md"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-xl sm:p-8"
       >
-        <div className="relative overflow-hidden rounded-[32px] border bg-background/80 p-8 shadow-2xl backdrop-blur-xl">
-          <div className="absolute inset-0 bg-linear-to-b from-white/5 via-transparent to-transparent" />
-
-          <div className="relative">
-            {/* Header */}
-
-            <div className="mb-8 flex flex-col items-center text-center">
-              <motion.div
-                initial={{
-                  scale: 0.8,
-                  opacity: 0,
-                }}
-                animate={{
-                  scale: 1,
-                  opacity: 1,
-                }}
-                transition={{
-                  delay: 0.15,
-                  duration: 0.5,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                whileHover={{
-                  scale: 1.05,
-                }}
-                className="mb-4 flex size-20 items-center justify-center rounded-[24px] bg-linear-to-b from-[#67e860] to-[#0fcc23] shadow-lg"
-              >
-                <svg viewBox="0 0 24 24" className="size-11 fill-white">
-                  <path d="M12 3C6.48 3 2 6.92 2 11.75c0 2.75 1.46 5.2 3.73 6.8-.13 1.13-.6 2.25-1.45 3.15-.18.19-.04.5.22.47 1.99-.25 3.6-1.02 4.73-1.84.88.21 1.81.32 2.77.32 5.52 0 10-3.92 10-8.75S17.52 3 12 3z" />
-                </svg>
-              </motion.div>
-
-              <motion.h1
-                initial={{
-                  opacity: 0,
-                  y: 10,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                transition={{
-                  delay: 0.2,
-                }}
-                className="text-3xl font-bold tracking-tight"
-              >
-                Messages
-              </motion.h1>
-
-              <motion.p
-                initial={{
-                  opacity: 0,
-                  y: 10,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                transition={{
-                  delay: 0.25,
-                }}
-                className="mt-2 text-sm text-muted-foreground"
-              >
-                End-to-end encrypted. Your password unlocks your messages on any
-                device.
-              </motion.p>
-            </div>
-
-            {/* Tabs */}
-
-            <Tabs
-              value={mode}
-              onValueChange={(value) => {
-                setMode(value as Mode);
-                setServerError('');
-                reset();
-              }}
-              className="mb-6"
-            >
-              <TabsList className="w-full">
-                <TabsTab value="signin">Sign In</TabsTab>
-                <TabsTab value="signup">Create Account</TabsTab>
-              </TabsList>
-            </Tabs>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={mode}
-                  initial={{
-                    opacity: 0,
-                    x: mode === 'signin' ? -20 : 20,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: mode === 'signin' ? 20 : -20,
-                  }}
-                  transition={{
-                    duration: 0.22,
-                  }}
-                  className="space-y-4"
-                >
-                  <AnimatePresence>
-                    {mode === 'signup' && (
-                      <motion.div
-                        initial={{
-                          opacity: 0,
-                          height: 0,
-                        }}
-                        animate={{
-                          opacity: 1,
-                          height: 'auto',
-                        }}
-                        exit={{
-                          opacity: 0,
-                          height: 0,
-                        }}
-                      >
-                        <Field>
-                          <FieldLabel>Name</FieldLabel>
-
-                          <Input
-                            placeholder="Duncan Knox"
-                            autoComplete="name"
-                            {...register('displayName')}
-                          />
-
-                          <FieldError>{errors.displayName?.message}</FieldError>
-                        </Field>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <Field>
-                    <FieldLabel>Username</FieldLabel>
-
-                    <Input
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      autoComplete="username"
-                      placeholder="duncan_knox"
-                      {...register('username', {
-                        setValueAs: (value) =>
-                          value?.toLowerCase().replace(/\s/g, ''),
-                      })}
-                    />
-
-                    <FieldError>{errors.username?.message}</FieldError>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel>Password</FieldLabel>
-
-                    <Input
-                      type="password"
-                      autoComplete={
-                        mode === 'signup' ? 'new-password' : 'current-password'
-                      }
-                      placeholder={
-                        mode === 'signup' ? 'At least 8 characters' : 'Password'
-                      }
-                      {...register('password')}
-                    />
-
-                    <FieldError>{errors.password?.message}</FieldError>
-                  </Field>
-
-                  {mode === 'signup' && (
-                    <motion.p
-                      initial={{
-                        opacity: 0,
-                      }}
-                      animate={{
-                        opacity: 1,
-                      }}
-                      className="text-xs leading-5 text-muted-foreground"
-                    >
-                      There is no password reset — your password is the only way
-                      to unlock encrypted messages.
-                    </motion.p>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              <motion.div
-                animate={
-                  serverError
-                    ? {
-                        x: [0, -8, 8, -6, 6, 0],
-                      }
-                    : {}
-                }
-              >
-                <AnimatePresence>
-                  {serverError && (
-                    <motion.div
-                      initial={{
-                        opacity: 0,
-                        height: 0,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        height: 'auto',
-                      }}
-                      exit={{
-                        opacity: 0,
-                        height: 0,
-                      }}
-                    >
-                      <FieldError>{serverError}</FieldError>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <Button type="submit" disabled={isSubmitting}>
-                <AnimatePresence mode="wait">
-                  {isSubmitting ? (
-                    <motion.span
-                      key="loading"
-                      initial={{
-                        opacity: 0,
-                      }}
-                      animate={{
-                        opacity: 1,
-                      }}
-                      exit={{
-                        opacity: 0,
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Spinner className="size-4" />
-                      Securing your messages...
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key={mode}
-                      initial={{
-                        opacity: 0,
-                      }}
-                      animate={{
-                        opacity: 1,
-                      }}
-                      exit={{
-                        opacity: 0,
-                      }}
-                    >
-                      {mode === 'signin' ? 'Sign In' : 'Create Account'}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </Button>
-            </form>
+        {/* Header */}
+        <div className="mb-7 flex flex-col items-center text-center">
+          <div className="mb-4 flex size-16 items-center justify-center rounded-[22px] bg-linear-to-b from-[#67e860] to-[#0fcc23] shadow-lg shadow-[#0fcc23]/30">
+            <svg viewBox="0 0 24 24" className="size-9 fill-white">
+              <path d="M12 3C6.48 3 2 6.92 2 11.75c0 2.75 1.46 5.2 3.73 6.8-.13 1.13-.6 2.25-1.45 3.15-.18.19-.04.5.22.47 1.99-.25 3.6-1.02 4.73-1.84.88.21 1.81.32 2.77.32 5.52 0 10-3.92 10-8.75S17.52 3 12 3z" />
+            </svg>
           </div>
+
+          <h1 className="text-2xl font-bold tracking-tight">
+            {invited ? "You're invited" : 'Messages'}
+          </h1>
+
+          {slug && (
+            <span className="mt-2 rounded-full bg-imsg-gray px-3 py-1 text-xs font-medium text-imsg-text-gray">
+              {slug}.{ROOT_HOST}
+            </span>
+          )}
+
+          <p className="mt-3 text-[15px] leading-snug text-muted-foreground">
+            Enter your name and a password — we&apos;ll sign you in, or set you
+            up if you&apos;re new.
+          </p>
         </div>
+
+        {!slug && (
+          <Alert variant="error" className="mb-5 items-center">
+            <IoAlertCircle />
+            <AlertDescription className="text-destructive-foreground">
+              No space selected. Go to{' '}
+              <a href={`https://${ROOT_HOST}`} className="font-medium underline">
+                {ROOT_HOST}
+              </a>{' '}
+              to create one.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Field invalid={Boolean(errors.name)}>
+            <FieldLabel>Your name</FieldLabel>
+            <Input
+              placeholder="Duncan Knox"
+              autoComplete="name"
+              autoCapitalize="words"
+              autoFocus
+              enterKeyHint="next"
+              {...register('name', {
+                onChange: (e) => setNameValue(e.target.value),
+              })}
+            />
+            {errors.name ? (
+              <FieldError match>{errors.name.message}</FieldError>
+            ) : (
+              handle && (
+                <FieldDescription>You&apos;ll be @{handle} here</FieldDescription>
+              )
+            )}
+          </Field>
+
+          <Field invalid={Boolean(errors.password)}>
+            <FieldLabel>Password</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="At least 8 characters"
+                enterKeyHint="go"
+                {...register('password')}
+              />
+              <InputGroupAddon align="inline-end">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {showPassword ? (
+                    <IoEyeOffOutline className="size-5" />
+                  ) : (
+                    <IoEyeOutline className="size-5" />
+                  )}
+                </button>
+              </InputGroupAddon>
+            </InputGroup>
+            {errors.password && (
+              <FieldError match>{errors.password.message}</FieldError>
+            )}
+          </Field>
+
+          {serverError && (
+            <motion.div
+              key={serverError}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto', x: [0, -8, 8, -5, 5, 0] }}
+              transition={{ x: { duration: 0.4 } }}
+            >
+              <Alert variant="error" className="items-center">
+                <IoAlertCircle />
+                <AlertDescription className="text-destructive-foreground">
+                  {serverError}
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+
+          <Button
+            type="submit"
+            loading={isSubmitting}
+            disabled={!slug}
+            size="lg"
+            className="w-full"
+          >
+            {invited ? 'Join space' : 'Continue'}
+            <IoArrowForward />
+          </Button>
+        </form>
+
+        <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+          <IoLockClosed className="size-3 shrink-0" />
+          End-to-end encrypted. There&apos;s no password reset.
+        </p>
       </motion.div>
     </div>
   );

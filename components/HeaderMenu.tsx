@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTheme } from "next-themes";
 import {
   IoEllipsisHorizontalCircleOutline,
   IoLogOutOutline,
@@ -23,15 +22,14 @@ import { useAuth } from "./AuthProvider";
 import { ProfileEditor } from "./ProfileEditor";
 import { REACTION_SETS, type ReactionSetId } from "./Tapback";
 import { setReactionSet, useReactionSet } from "@/lib/reactionSet";
+import { useAppTheme } from "@/lib/useAppTheme";
+import { PALETTES, type PaletteId } from "@/lib/themes";
 
 export function HeaderMenu() {
   const { logout, profile } = useAuth();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { palette, isDark, setPalette, toggleMode } = useAppTheme();
   const reactionSet = useReactionSet();
   const [editOpen, setEditOpen] = useState(false);
-  // resolvedTheme is undefined during SSR/first paint, so this stays
-  // hydration-safe without a mounted flag.
-  const isDark = resolvedTheme === "dark";
 
   return (
     <>
@@ -56,7 +54,7 @@ export function HeaderMenu() {
         <MenuItem
           className="cursor-pointer"
           closeOnClick={false}
-          onClick={() => setTheme(isDark ? "light" : "dark")}
+          onClick={toggleMode}
         >
           {isDark ? (
             <IoSunnyOutline className="size-4" />
@@ -65,6 +63,18 @@ export function HeaderMenu() {
           )}
           {isDark ? "Light Mode" : "Dark Mode"}
         </MenuItem>
+        <MenuSeparator />
+        <MenuRadioGroup
+          value={palette}
+          onValueChange={(v) => setPalette(v as PaletteId)}
+        >
+          <MenuGroupLabel>Theme</MenuGroupLabel>
+          {PALETTES.map((p) => (
+            <MenuRadioItem key={p.id} value={p.id}>
+              {p.label}
+            </MenuRadioItem>
+          ))}
+        </MenuRadioGroup>
         <MenuSeparator />
         <MenuRadioGroup
           value={reactionSet}

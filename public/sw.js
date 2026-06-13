@@ -8,21 +8,21 @@
 //     that page, then to /offline.
 // Bump VERSION to invalidate all caches on the next deploy.
 
-const VERSION = "v2";
+const VERSION = 'v3';
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
-const PRECACHE_URLS = ["/offline", "/icon-192.png", "/icon-512.png"];
+const PRECACHE_URLS = ['/offline', '/icon-192.png', '/icon-512.png'];
 
-self.addEventListener("install", (event) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(PAGE_CACHE)
       .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()),
   );
 });
 
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
@@ -30,29 +30,29 @@ self.addEventListener("activate", (event) => {
         Promise.all(
           keys
             .filter((key) => key !== STATIC_CACHE && key !== PAGE_CACHE)
-            .map((key) => caches.delete(key))
-        )
+            .map((key) => caches.delete(key)),
+        ),
       )
-      .then(() => self.clients.claim())
+      .then(() => self.clients.claim()),
   );
 });
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== "GET") return;
+  if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // Supabase etc.
 
   if (
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/icon-")
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/icon-')
   ) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  if (request.mode === "navigate") {
+  if (request.mode === 'navigate') {
     event.respondWith(navigationNetworkFirst(request));
   }
 });
@@ -77,7 +77,7 @@ async function navigationNetworkFirst(request) {
   } catch {
     const cached = await cache.match(request);
     if (cached) return cached;
-    const offline = await cache.match("/offline");
+    const offline = await cache.match('/offline');
     return offline ?? Response.error();
   }
 }

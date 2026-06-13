@@ -116,7 +116,17 @@ function useConversation(id: string, me: string): Conversation | null {
 // Outer gate: while a passcode lock is active, the message UI is NEVER
 // mounted — no fetch, no decrypt, no composer — so stripping the lock screen
 // from the DOM reveals nothing and can't send messages.
-export function ChatThread({ id }: { id: string }) {
+export function ChatThread({
+  id,
+  initialPasscodeHash = null,
+  initialTitle = '',
+}: {
+  id: string;
+  // Resolved server-side so a locked chat renders the LockScreen on first
+  // paint; the client lookup below reconciles once the conversation loads.
+  initialPasscodeHash?: string | null;
+  initialTitle?: string;
+}) {
   const { userId } = useAuth();
   const conversation = useConversation(id, userId);
 
@@ -128,12 +138,14 @@ export function ChatThread({ id }: { id: string }) {
   const myPasscodeHash =
     hashOverride !== undefined
       ? hashOverride
-      : (conversation?.myPasscodeHash ?? null);
+      : conversation
+        ? (conversation.myPasscodeHash ?? null)
+        : initialPasscodeHash;
   const locked = Boolean(myPasscodeHash) && !unlocked;
 
   const others = conversation?.participants.filter((p) => p.id !== userId) ?? [];
   const title = !conversation
-    ? ''
+    ? initialTitle
     : conversation.is_group
       ? (conversation.name ?? `${others.length} People`)
       : (others[0]?.display_name ?? 'Chat');
@@ -340,6 +352,7 @@ function ChatThreadInner({
         <ChatHeader
           title={title}
           others={others}
+          conversationId={id}
           onOpenDetails={() => setDetailsOpen(true)}
           onOpenTheme={() => setThemeOpen(true)}
           onOpenPasscode={() => setPasscodeOpen(true)}

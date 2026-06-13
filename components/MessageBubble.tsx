@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform } from 'motion/react';
-import { IoArrowUndo } from 'react-icons/io5';
+import { IoArrowUndo, IoCall, IoImage, IoVideocam } from 'react-icons/io5';
 import { cn } from '@/lib/utils';
 import type { MessageRow } from '@/lib/group';
 import type {
@@ -12,12 +12,91 @@ import type {
   ReactionKind,
   VibeId,
 } from '@/lib/types';
-import { expressionById } from '@/lib/expressions';
 import { Avatar } from './Avatar';
 import { ReactionPicker } from './ReactionPicker';
 import { ReactionBadges } from './ReactionBadges';
+import { ExpressionBubble } from './ExpressionBubble';
 
 const LONG_PRESS_MS = 450;
+
+// Telegram-style reply quote: a rounded accent bar, the original sender's name
+// in colour, and a one-line snippet on a tinted strip. Nested inside text
+// bubbles; sits just above full-bleed attachment bubbles.
+function ReplyQuote({
+  mine,
+  me,
+  repliedTo,
+  repliedSender,
+  onJumpTo,
+  className,
+}: {
+  mine: boolean;
+  me: string;
+  repliedTo: Message;
+  repliedSender?: Profile;
+  onJumpTo?: (messageId: string) => void;
+  className?: string;
+}) {
+  const name =
+    repliedSender?.id === me
+      ? 'You'
+      : (repliedSender?.display_name ?? 'Unknown');
+  const isImage =
+    repliedTo.payload?.kind === 'file' &&
+    repliedTo.payload.mime?.startsWith('image/');
+  const snippet = repliedTo.deleted_at
+    ? 'Unsent message'
+    : repliedTo.payload?.kind === 'file'
+      ? isImage
+        ? 'Photo'
+        : (repliedTo.payload.name ?? 'Attachment')
+      : (repliedTo.text ?? 'Message');
+
+  return (
+    <button
+      type="button"
+      // tapping jumps to the original; stop the press so it doesn't open the
+      // reaction picker or start a swipe on the parent bubble
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onJumpTo?.(repliedTo.id);
+      }}
+      className={cn(
+        'relative z-2 mb-1 flex max-w-full items-stretch gap-2 text-left active:opacity-70',
+        className,
+      )}
+    >
+      {/* rounded accent bar — only the bar is tinted, not the whole strip */}
+      <span
+        aria-hidden
+        className={cn(
+          'w-0.75 shrink-0 rounded-full',
+          mine ? 'bg-white/80' : 'bg-imsg-blue',
+        )}
+      />
+      <div className="min-w-0 flex-1">
+        <span
+          className={cn(
+            'block truncate text-[12px] font-semibold leading-tight',
+            mine ? 'text-white' : 'text-imsg-blue',
+          )}
+        >
+          {name}
+        </span>
+        <span
+          className={cn(
+            'flex items-center gap-1 text-[12px] leading-tight',
+            mine ? 'text-white/85' : 'text-imsg-text-gray',
+          )}
+        >
+          {isImage && <IoImage className="size-3 shrink-0" />}
+          <span className="truncate">{snippet}</span>
+        </span>
+      </div>
+    </button>
+  );
+}
 
 export function MessageBubble({
   row,
@@ -31,6 +110,7 @@ export function MessageBubble({
   onReply,
   onUnsend,
   onEdit,
+  onJumpTo,
   children,
 }: {
   row: MessageRow;
@@ -44,6 +124,8 @@ export function MessageBubble({
   onReply: (message: Message) => void;
   onUnsend: (message: Message) => void;
   onEdit: (message: Message) => void;
+  /** Scroll to + flash the original message when its reply quote is tapped. */
+  onJumpTo?: (messageId: string) => void;
   /** Attachment bubbles render here instead of text. */
   children?: React.ReactNode;
 }) {
@@ -63,6 +145,7 @@ export function MessageBubble({
   const canSwipe = !message.status && !message.deleted_at;
   const expression =
     message.payload?.kind === 'expression' ? message.payload : null;
+  const call = message.payload?.kind === 'call' ? message.payload : null;
 
   // Swipe-to-reply: drag the bubble toward its leading edge to reveal an arrow;
   // released past the threshold it fires onReply. mine swipes left, others right.
@@ -91,6 +174,33 @@ export function MessageBubble({
     );
   }
 
+  // Call record — a centered log row (like iMessage's call entries).
+  if (call) {
+    const Icon = call.media === 'video' ? IoVideocam : IoCall;
+    const kind = call.media === 'video' ? 'Video' : 'Voice';
+    const missed = call.outcome === 'missed';
+    const mm = Math.floor(call.duration / 60);
+    const ss = String(call.duration % 60).padStart(2, '0');
+    const label = !missed
+      ? `${kind} call · ${mm}:${ss}`
+      : mine
+        ? `${kind} call · No answer`
+        : `Missed ${kind.toLowerCase()} call`;
+    return (
+      <div className="my-2 flex justify-center">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full bg-imsg-gray/70 px-3 py-1 text-[12px] font-medium backdrop-blur-xs',
+            missed && !mine ? 'text-red-500' : 'text-imsg-text-gray',
+          )}
+        >
+          <Icon className="size-3.5" />
+          {label}
+        </span>
+      </div>
+    );
+  }
+
   const startPress = () => {
     if (message.status) return; // can't react to unsent-yet messages
     pressTimer.current = setTimeout(() => setPickerOpen(true), LONG_PRESS_MS);
@@ -99,6 +209,65 @@ export function MessageBubble({
     if (pressTimer.current) clearTimeout(pressTimer.current);
     pressTimer.current = null;
   };
+
+  // Vibe expressions: a cute centered "moment" — a glossy candy capsule with a
+  // soft glow, a frosted icon, and twinkling sparkles. Who sent it sits below.
+  if (expression) {
+    return (
+      <div
+        className={cn(
+          'flex flex-col items-center gap-1.5',
+          isFirstInGroup ? 'mt-4' : 'mt-2',
+          reactions.length > 0 && 'mt-7',
+        )}
+      >
+        <div ref={bubbleRef} className="relative">
+          <ReactionBadges reactions={reactions} mine={mine} me={me} />
+          <ReactionPicker
+            open={pickerOpen}
+            mine={mine}
+            vibe={vibe}
+            message={message}
+            myReaction={myReaction}
+            anchor={bubbleRef}
+            onPick={(kind) => onReact(message.id, kind)}
+            onReply={() => onReply(message)}
+            onEdit={() => onEdit(message)}
+            onUnsend={() => onUnsend(message)}
+            onClose={() => setPickerOpen(false)}
+          />
+
+          {/* entrance pop, then a gentle playful float */}
+          <motion.div
+            initial={{ scale: 0.3, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 14 }}
+            onContextMenu={(e) => {
+              if (message.status) return;
+              e.preventDefault();
+              setPickerOpen(true);
+            }}
+            onPointerDown={startPress}
+            onPointerUp={cancelPress}
+            onPointerLeave={cancelPress}
+            onPointerCancel={cancelPress}
+          >
+            <motion.div animate={{ y: [0, -3, 0] }}>
+              <ExpressionBubble
+                id={expression.id}
+                text={message.text ?? expression.text}
+                pending={pending}
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+
+        <span className="flex items-center gap-1 text-[11px] font-medium text-imsg-text-gray">
+          {mine ? 'You' : (sender?.display_name ?? 'Unknown')}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -149,14 +318,15 @@ export function MessageBubble({
             mine && message.status ? { scale: 0.85, y: 8, opacity: 0.6 } : false
           }
           animate={{ scale: 1, y: 0, opacity: 1 }}
-          whileHover={{ scale: 1.015 }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           style={{ x: dragX, touchAction: 'pan-y' }}
           drag={canSwipe ? 'x' : false}
           dragDirectionLock
           dragSnapToOrigin
           dragElastic={0.4}
-          dragConstraints={mine ? { left: -80, right: 0 } : { left: 0, right: 80 }}
+          dragConstraints={
+            mine ? { left: -80, right: 0 } : { left: 0, right: 80 }
+          }
           onDragStart={cancelPress}
           onDragEnd={(_, info) => {
             const past = mine
@@ -184,28 +354,17 @@ export function MessageBubble({
             onClose={() => setPickerOpen(false)}
           />
 
-          {repliedTo && (
-            <div
-              className={cn(
-                'mb-0.5 max-w-full rounded-[14px] px-3 py-1 text-[13px] backdrop-blur-xs',
-                mine
-                  ? 'bg-imsg-gray/70 text-imsg-text-gray'
-                  : 'bg-imsg-gray/70 text-imsg-text-gray',
-              )}
-            >
-              <span className="block text-[11px] font-semibold text-imsg-blue">
-                {repliedSender?.id === me
-                  ? 'You'
-                  : (repliedSender?.display_name ?? 'Unknown')}
-              </span>
-              <span className="line-clamp-1 wrap-anywhere">
-                {repliedTo.deleted_at
-                  ? 'Unsent message'
-                  : repliedTo.payload?.kind === 'file'
-                    ? 'Attachment'
-                    : (repliedTo.text ?? 'Message')}
-              </span>
-            </div>
+          {/* Attachment bubbles are full-bleed images, so the reply quote sits
+              just above them rather than nested inside. */}
+          {repliedTo && children && (
+            <ReplyQuote
+              mine={mine}
+              me={me}
+              repliedTo={repliedTo}
+              repliedSender={repliedSender}
+              onJumpTo={onJumpTo}
+              className="self-start"
+            />
           )}
 
           <div
@@ -228,38 +387,24 @@ export function MessageBubble({
               mine
                 ? 'text-white [background:var(--imsg-bubble-out-bg)]'
                 : 'bg-imsg-gray text-foreground',
-              // expressions render oversized; gradient replaces the tail
-              expression && 'rounded-[22px] px-4.5 py-2.5 text-[21px] leading-7',
-              isLastInGroup && !children && !expression && 'tail',
-              isLastInGroup &&
-                !children &&
-                !expression &&
-                (mine ? 'tail-out' : 'tail-in'),
+              isLastInGroup && !children && 'tail',
+              isLastInGroup && !children && (mine ? 'tail-out' : 'tail-in'),
               pending && 'opacity-60',
             )}
-            style={
-              expression && mine && expression.effect !== 'none'
-                ? {
-                    background:
-                      expression.effect === 'hearts'
-                        ? 'linear-gradient(135deg, #ff375f, #af52de)'
-                        : 'linear-gradient(135deg, #5e5ce6, #af52de)',
-                  }
-                : undefined
-            }
           >
+            {/* nested reply preview lives inside text bubbles (Telegram style) */}
+            {repliedTo && !children && (
+              <ReplyQuote
+                mine={mine}
+                me={me}
+                repliedTo={repliedTo}
+                repliedSender={repliedSender}
+                onJumpTo={onJumpTo}
+              />
+            )}
+
             {children || (
-              <span
-                className={cn(
-                  'relative z-2',
-                  expression && 'flex items-center gap-2',
-                )}
-              >
-                {expression &&
-                  (() => {
-                    const Icon = expressionById(expression.id)?.icon;
-                    return Icon ? <Icon className="size-6 shrink-0" /> : null;
-                  })()}
+              <span className="relative z-2 text-sm">
                 {message.text === null ? (
                   <span className="italic opacity-70">Unable to decrypt</span>
                 ) : (

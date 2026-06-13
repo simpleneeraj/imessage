@@ -1,12 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import {
-  IoCheckmark,
-  IoPersonAdd,
-  IoCloseCircle,
-  IoPencil,
-} from 'react-icons/io5';
+import { IoPersonAdd, IoCloseCircle, IoPencil } from 'react-icons/io5';
 import {
   Drawer,
   DrawerHeader,
@@ -15,17 +10,10 @@ import {
 } from '@/components/ui/drawer';
 import { supabase } from '@/lib/supabase';
 import { grantConvKey } from '@/lib/keys';
-import { hashPasscode } from '@/lib/passcode';
-import { VIBES } from '@/lib/expressions';
 import type { Conversation, Profile } from '@/lib/types';
-import { REACTION_SETS, TapbackGlyph } from './Tapback';
-import { useReactionSet } from '@/lib/reactionSet';
 import { Avatar } from './Avatar';
-import { iosMenu } from '@/components/ui/ios-menu';
 import { useIsDesktop } from '@/lib/useIsDesktop';
 import { cn } from '@/lib/utils';
-
-const menu = iosMenu();
 
 // User management: members + reaction sets. Theming lives in ThemePicker.
 export function ChatDetails({
@@ -39,7 +27,6 @@ export function ChatDetails({
   conversation: Conversation | null;
   me: string;
 }) {
-  const reactionSet = useReactionSet();
   const [members, setMembers] = useState<Profile[]>([]);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
@@ -50,15 +37,8 @@ export function ChatDetails({
   const [editingNick, setEditingNick] = useState<string | null>(null);
   const [nickValue, setNickValue] = useState('');
 
-  // passcode (override tracks changes made in this session)
-  const [pass, setPass] = useState('');
-  const [passOverride, setPassOverride] = useState<boolean | null>(null);
-  const hasPasscode =
-    passOverride ?? Boolean(conversation?.myPasscodeHash);
-
   const convId = conversation?.id;
   const isAdmin = conversation?.created_by === me;
-  const vibe = conversation?.vibe ?? 'classic';
 
   const refreshMembers = useCallback(async () => {
     if (!convId) return;
@@ -81,22 +61,6 @@ export function ChatDetails({
       .then(() => {});
     setEditingNick(null);
     await refreshMembers();
-  }
-
-  async function savePasscode() {
-    if (!convId || pass.length !== 4) return;
-    const hash = await hashPasscode(pass, convId);
-    await supabase.rpc('set_passcode', { conv: convId, hash }).then(() => {});
-    setPass('');
-    setPassOverride(true);
-  }
-
-  async function removePasscode() {
-    if (!convId) return;
-    await supabase
-      .rpc('set_passcode', { conv: convId, hash: null })
-      .then(() => {});
-    setPassOverride(false);
   }
 
   useEffect(() => {
@@ -166,11 +130,9 @@ export function ChatDetails({
       position={isDesktop ? 'right' : 'bottom'}
     >
       <DrawerPopup
+        variant="inset"
         showBar={!isDesktop}
-        className={cn(
-          'flex flex-col',
-          isDesktop ? 'h-full' : 'max-h-[88dvh]',
-        )}
+        className={cn('flex flex-col', isDesktop ? 'h-full' : 'max-h-[88dvh]')}
       >
         <DrawerHeader>
           <DrawerTitle>Chat Info</DrawerTitle>
@@ -282,111 +244,6 @@ export function ChatDetails({
               </button>
             ))}
           </section>
-
-          {/* Chat vibe: one config for expressions + the chat's reaction set.
-              Each card previews its tapback pill; Classic shows your default. */}
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
-              Chat Vibe
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {VIBES.map((v) => {
-                const setId = v.id === 'classic' ? reactionSet : v.id;
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() =>
-                      void supabase
-                        .rpc('set_vibe', { conv: convId, v: v.id })
-                        .then(() => {})
-                    }
-                    className={cn(
-                      'cursor-pointer rounded-xl border px-3 py-2.5 text-left',
-                      vibe === v.id
-                        ? 'border-imsg-blue bg-imsg-blue/5'
-                        : 'border-border',
-                    )}
-                  >
-                    <span className="flex items-center gap-1.5 text-[15px] font-medium">
-                      <v.icon
-                        className={cn(
-                          'size-4.5',
-                          vibe === v.id
-                            ? 'text-imsg-blue'
-                            : 'text-imsg-text-gray',
-                        )}
-                      />
-                      {v.label}
-                      {vibe === v.id && (
-                        <IoCheckmark className="ml-auto size-4.5 text-imsg-blue" />
-                      )}
-                    </span>
-                    <span className="mt-0.5 block text-[12px] text-muted-foreground">
-                      {v.blurb}
-                    </span>
-                    {/* mini tapback-pill preview of this vibe's reaction set */}
-                    <span
-                      className={menu.surface({
-                        class:
-                          'mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 shadow-sm',
-                      })}
-                    >
-                      {REACTION_SETS[setId].items.map((t) => (
-                        <TapbackGlyph
-                          key={t}
-                          value={t}
-                          className="size-3.5 text-imsg-text-gray"
-                        />
-                      ))}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Passcode: a private access gate on top of E2EE */}
-          <section>
-            <h3 className="mb-1 text-sm font-semibold text-muted-foreground">
-              Passcode
-            </h3>
-            <p className="mb-3 text-[12px] text-muted-foreground">
-              {hasPasscode
-                ? 'This chat is locked on your account.'
-                : 'Lock this chat behind a 4-digit code — only on your account.'}
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                value={pass}
-                onChange={(e) =>
-                  setPass(e.target.value.replace(/\D/g, '').slice(0, 4))
-                }
-                inputMode="numeric"
-                placeholder="••••"
-                aria-label="4-digit passcode"
-                className="w-24 rounded-xl border border-border bg-transparent px-3 py-2 text-center text-[17px] tracking-[0.4em] outline-none focus:border-imsg-blue"
-              />
-              <button
-                type="button"
-                disabled={pass.length !== 4}
-                onClick={() => void savePasscode()}
-                className="cursor-pointer rounded-xl bg-imsg-blue px-4 py-2 text-[14px] font-semibold text-white active:opacity-70 disabled:opacity-40"
-              >
-                {hasPasscode ? 'Update' : 'Set Passcode'}
-              </button>
-              {hasPasscode && (
-                <button
-                  type="button"
-                  onClick={() => void removePasscode()}
-                  className="cursor-pointer rounded-xl px-3 py-2 text-[14px] font-medium text-destructive active:opacity-70"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </section>
-
         </div>
       </DrawerPopup>
     </Drawer>

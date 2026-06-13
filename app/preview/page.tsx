@@ -58,6 +58,7 @@ export default function PreviewPage() {
       <ChatHeader
         title="2 People"
         others={[DUNCAN, JACKELYN]}
+        conversationId="preview"
         vanish={false}
         onToggleVanish={() => {}}
         isAdmin={false}

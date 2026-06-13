@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { cn } from '@/lib/utils';
 import { buildRows } from '@/lib/group';
 import type {
   ConversationEvent,
@@ -106,6 +107,22 @@ export function MessageList({
   const lastKeyRef = useRef<string | null>(null);
   const [editing, setEditing] = useState<Message | null>(null);
 
+  // Tapping a reply quote scrolls to the original and briefly flashes it.
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const jumpToMessage = (messageId: string) => {
+    const el = scrollRef.current?.querySelector<HTMLElement>(
+      `[data-mid="${messageId}"]`,
+    );
+    if (!el) return; // original is outside the loaded window
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    setHighlightId(null);
+    // next frame so the class re-applies and the animation restarts
+    requestAnimationFrame(() => setHighlightId(messageId));
+    highlightTimer.current = setTimeout(() => setHighlightId(null), 1500);
+  };
+
   const rows = buildRows(messages, { isGroup, me });
   const profilesById = new Map(participants.map((p) => [p.id, p]));
   const messagesById = new Map(messages.map((m) => [m.id, m]));
@@ -171,12 +188,19 @@ export function MessageList({
             (() => {
               const row = item.row;
               return (
-                <div key={item.key}>
+                <div
+                  key={item.key}
+                  data-mid={row.message.id}
+                  className={cn(
+                    highlightId === row.message.id && 'msg-flash rounded-2xl',
+                  )}
+                >
                   <MessageBubble
                     row={row}
                     sender={profilesById.get(row.message.sender_id)}
                     me={me}
                     vibe={vibe}
+                    onJumpTo={jumpToMessage}
                     reactions={reactions.get(row.message.id) ?? []}
                     repliedTo={
                       row.message.reply_to

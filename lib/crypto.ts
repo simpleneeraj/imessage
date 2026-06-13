@@ -241,6 +241,13 @@ export type MessagePayload =
       fiv: string; // base64 file IV
       w?: number;
       h?: number;
+    }
+  | {
+      kind: "call";
+      media: "audio" | "video";
+      // completed = connected then ended; missed = never connected
+      outcome: "completed" | "missed";
+      duration: number; // seconds (0 when missed)
     };
 
 type Envelope = { v: number; iv: string; ct: string };
