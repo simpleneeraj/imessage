@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { idb } from "./idb";
-import type { Conversation, Message } from "./types";
+import { idb } from "@/lib/idb";
+import type { Conversation, Message } from "@/lib/types";
 
 // E2EE means the server can't search message text — search runs entirely
 // over the local decrypted cache (titles + the messages this device has seen).

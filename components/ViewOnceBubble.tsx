@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IoClose, IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
-import { supabase } from "@/lib/supabase";
 import { downloadAndDecrypt, revokeAttachmentUrl } from "@/lib/attachments";
+import { useMarkAttachmentViewed } from "@/hooks/useMarkAttachmentViewed";
 import type { MessagePayload } from "@/lib/crypto";
 import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ export function ViewOnceBubble({
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
+  const { trigger: markViewed } = useMarkAttachmentViewed();
   const consumed = message.viewed_at !== null;
   const label = payload.mime.startsWith("video/") ? "Video" : "Photo";
 
@@ -42,7 +43,7 @@ export function ViewOnceBubble({
     setOpening(false);
     revokeAttachmentUrl(payload.path);
     // Destroys the storage object server-side; everyone gets the UPDATE event.
-    await supabase.rpc("mark_attachment_viewed", { msg: message.id });
+    await markViewed({ messageId: message.id });
   }
 
   return (

@@ -14,7 +14,6 @@ import {
   IoFlashOutline,
   IoHappyOutline,
   IoHeart,
-  IoKeypadOutline,
   IoLanguageOutline,
   IoLockClosed,
   IoMicOutline,
@@ -104,11 +103,6 @@ const ROADMAP = [
     body: 'Pet names per chat — what you call each other is nobody else’s business.',
   },
   {
-    icon: IoKeypadOutline,
-    title: 'Passcode-locked chats',
-    body: 'A 4-digit lock on your most private conversations, on top of E2EE.',
-  },
-  {
     icon: IoMicOutline,
     title: 'Voice messages',
     body: 'Hold-to-record encrypted voice notes with waveform playback.',
@@ -162,7 +156,6 @@ const TIERS = [
       'All themes, wallpapers & gradient bubbles',
       'Chat Vibes — Couple, Friends, Professional',
       'Vanish mode & view-once attachments',
-      'Passcode-locked chats',
       'Priority support',
     ],
     cta: 'Coming soon',

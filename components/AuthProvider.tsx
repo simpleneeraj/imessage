@@ -12,6 +12,7 @@ import { idb } from "@/lib/idb";
 import { wireOutbox } from "@/lib/outbox";
 import { getPrivateKey } from "@/lib/keys";
 import { signOut } from "@/lib/auth";
+import { useInactivityLogout } from "@/lib/useInactivityLogout";
 import type { Profile } from "@/lib/types";
 import { AuthGate } from "./AuthGate";
 import { Spinner } from "@/components/ui/spinner";
@@ -69,22 +70,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void bootstrap();
     wireOutbox();
 
+    // This app no longer ships a service worker. Tear down any SW (and its
+    // caches) left installed from a previous build, otherwise it keeps serving
+    // stale /_next chunks on devices that visited the old PWA.
     if ("serviceWorker" in navigator) {
-      if (process.env.NODE_ENV === "production") {
-        void navigator.serviceWorker.register("/sw.js", {
-          updateViaCache: "none",
-        });
-      } else {
-        // In dev, tear down any service worker left over from a prior
-        // production run — otherwise it keeps serving stale /_next chunks.
-        void navigator.serviceWorker
-          .getRegistrations()
-          .then((regs) => regs.forEach((r) => void r.unregister()));
-        if ("caches" in window) {
-          void caches.keys().then((keys) =>
-            keys.forEach((k) => void caches.delete(k))
-          );
-        }
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => void r.unregister()));
+      if ("caches" in window) {
+        void caches
+          .keys()
+          .then((keys) => keys.forEach((k) => void caches.delete(k)));
       }
     }
 
@@ -101,6 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await signOut();
   }, []);
+
+  // Auto sign-out after 5 minutes of inactivity (only once signed in).
+  useInactivityLogout(phase === "ready", () => void signOut());
 
   const updateProfile = useCallback((patch: Partial<Profile>) => {
     setProfile((cur) => {

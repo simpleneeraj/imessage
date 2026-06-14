@@ -7,13 +7,13 @@ import {
   DrawerPopup,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthProvider';
 import { Avatar } from './Avatar';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import { useIsDesktop } from '@/lib/useIsDesktop';
+import { useUpdateProfile } from '@/hooks/useUpdateProfile';
 
 const MOODS = [
   '😀 Happy',
@@ -34,6 +34,7 @@ export function ProfileEditor({
   const isDesktop = useIsDesktop();
 
   const { profile, updateProfile } = useAuth();
+  const { trigger: saveProfile } = useUpdateProfile();
   const [displayName, setDisplayName] = useState(profile.display_name);
   const [mood, setMood] = useState(profile.mood ?? '');
   const [saving, setSaving] = useState(false);
@@ -42,14 +43,18 @@ export function ProfileEditor({
     const name = displayName.trim();
     if (!name || saving) return;
     setSaving(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ display_name: name, mood: mood.trim() || null })
-      .eq('id', profile.id);
-    setSaving(false);
-    if (!error) {
+    try {
+      await saveProfile({
+        id: profile.id,
+        display_name: name,
+        mood: mood.trim() || null,
+      });
       updateProfile({ display_name: name, mood: mood.trim() || null });
       onOpenChange(false);
+    } catch {
+      // surface nothing for now; keep the sheet open so the user can retry
+    } finally {
+      setSaving(false);
     }
   }
 

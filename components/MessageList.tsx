@@ -11,7 +11,6 @@ import type {
   Profile,
   Reaction,
   ReactionKind,
-  VibeId,
 } from '@/lib/types';
 import { DateSeparator } from './DateSeparator';
 import { MessageBubble } from './MessageBubble';
@@ -82,7 +81,6 @@ export function MessageList({
   participantsMeta,
   typingUserIds,
   events = [],
-  vibe = 'classic',
   onReact,
   onReply,
   onUnsend,
@@ -96,7 +94,6 @@ export function MessageList({
   participantsMeta: ParticipantMeta[];
   typingUserIds: string[];
   events?: ConversationEvent[];
-  vibe?: VibeId;
   onReact: (messageId: string, kind: ReactionKind) => void;
   onReply: (message: Message) => void;
   onUnsend: (message: Message) => void;
@@ -199,7 +196,6 @@ export function MessageList({
                     row={row}
                     sender={profilesById.get(row.message.sender_id)}
                     me={me}
-                    vibe={vibe}
                     onJumpTo={jumpToMessage}
                     reactions={reactions.get(row.message.id) ?? []}
                     repliedTo={

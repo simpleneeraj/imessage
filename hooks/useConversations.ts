@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "./supabase";
-import { idb } from "./idb";
-import type { Conversation, Profile } from "./types";
+import { supabase } from "@/lib/supabase";
+import { idb } from "@/lib/idb";
+import type { Conversation, Profile } from "@/lib/types";
 
 type ConversationRow = Omit<Conversation, "participants"> & {
   conversation_participants: {

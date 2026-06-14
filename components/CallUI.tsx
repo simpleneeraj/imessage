@@ -16,7 +16,6 @@ import { useCall } from './CallProvider';
 import { Avatar } from './Avatar';
 import { cn } from '@/lib/utils';
 import { REACTION_SETS, TapbackGlyph } from './Tapback';
-import { useReactionSet } from '@/lib/reactionSet';
 
 function fmtDuration(total: number): string {
   const h = Math.floor(total / 3600);
@@ -128,8 +127,8 @@ export function CallUI() {
 
   const elapsed = useElapsed(connectedAt);
   const [pickerOpen, setPickerOpen] = useState(false);
-  // In-call reactions use the same tokenised icon set as message tapbacks.
-  const reactionItems = REACTION_SETS[useReactionSet()].items;
+  // In-call reactions use the same classic tapback set as messages.
+  const reactionItems = REACTION_SETS.classic.items;
 
   if (status === 'idle') return null;
 

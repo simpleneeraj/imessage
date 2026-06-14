@@ -3,10 +3,10 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@supabase-cache-helpers/postgrest-swr";
-import { supabase } from "@/lib/supabase";
 import { createConvKey } from "@/lib/keys";
 import { useDebounce } from "@/lib/useDebounce";
+import { useSearchProfiles } from "@/hooks/useSearchProfiles";
+import { useCreateConversation } from "@/hooks/useCreateConversation";
 import { useAuth } from "./AuthProvider";
 import type { Profile } from "@/lib/types";
 import { Avatar } from "./Avatar";
@@ -25,17 +25,8 @@ export function NewChat() {
   const term = query.trim();
   const debounced = useDebounce(term, 200);
 
-  const { data } = useQuery<Profile>(
-    debounced.length >= 2
-      ? supabase
-          .from("profiles")
-          .select("*")
-          .ilike("username", `${debounced}%`)
-          .neq("id", userId)
-          .not("public_key", "is", null)
-          .limit(8)
-      : null
-  );
+  const { data } = useSearchProfiles(debounced, userId);
+  const { trigger: createConversation } = useCreateConversation();
   const results: Profile[] = term.length >= 2 ? (data ?? []) : [];
 
   function addRecipient(profile: Profile) {
@@ -50,16 +41,19 @@ export function NewChat() {
     if (selected.length === 0 || creating) return;
     setCreating(true);
     setError("");
-    const { data, error: rpcError } = await supabase.rpc("create_conversation", {
-      other_usernames: selected.map((p) => p.username),
-      group_name: selected.length > 1 ? groupName.trim() || null : null,
-    });
-    if (rpcError || !data) {
+    let convId: string;
+    try {
+      convId = await createConversation({
+        otherUsernames: selected.map((p) => p.username),
+        groupName: selected.length > 1 ? groupName.trim() || null : null,
+      });
+    } catch (e) {
       setCreating(false);
-      setError(rpcError?.message ?? "Could not create the conversation.");
+      setError(
+        e instanceof Error ? e.message : "Could not create the conversation.",
+      );
       return;
     }
-    const convId = data as string;
     const key = await createConvKey(convId, [...selected, profile], userId);
     if (!key) {
       setCreating(false);
@@ -157,7 +151,7 @@ export function NewChat() {
           ))}
           {query.trim().length >= 2 && results.length === 0 && (
             <li className="px-4 py-6 text-center text-[15px] text-muted-foreground">
-              No one found for "{query.trim()}"
+              No one found for &quot;{query.trim()}&quot;
             </li>
           )}
         </ul>

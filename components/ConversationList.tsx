@@ -5,15 +5,14 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { IoChevronForward, IoCreateOutline, IoSearch } from 'react-icons/io5';
 import { useAuth } from './AuthProvider';
-import { useConversations } from '@/lib/useConversations';
-import { useSearch } from '@/lib/useSearch';
+import { useConversations } from '@/hooks/useConversations';
+import { useSearch } from '@/hooks/useSearch';
 import { listTime } from '@/lib/time';
 import { getPreviews, onPreviewsChange, type Preview } from '@/lib/previews';
 import type { Conversation } from '@/lib/types';
 import { Avatar } from './Avatar';
 import { OfflineBanner } from './OfflineBanner';
 import { HeaderMenu } from './HeaderMenu';
-import { InviteCard } from './InviteCard';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import Logo from './logo';
@@ -195,16 +194,12 @@ export function ConversationList() {
             <Spinner className="size-6 text-muted-foreground" />
           </div>
         ) : conversations.length === 0 ? (
-          <InviteCard
-            fallback={
-              <div className="flex flex-col items-center gap-2 px-8 py-16 text-center">
-                <p className="text-[17px] font-semibold">No Messages</p>
-                <p className="text-[15px] text-muted-foreground">
-                  Tap the compose button to start a conversation by username.
-                </p>
-              </div>
-            }
-          />
+          <div className="flex flex-col items-center gap-2 px-8 py-16 text-center">
+            <p className="text-[17px] font-semibold">No Messages</p>
+            <p className="text-[15px] text-muted-foreground">
+              Tap the compose button to start a conversation by username.
+            </p>
+          </div>
         ) : (
           conversations.map((conv) => (
             <Row

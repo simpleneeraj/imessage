@@ -1,81 +1,53 @@
 'use client';
 
-import { z } from 'zod';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'motion/react';
-import {
-  IoEyeOutline,
-  IoEyeOffOutline,
-  IoAlertCircle,
-  IoLockClosed,
-  IoArrowForward,
-} from 'react-icons/io5';
+import { IoAlertCircle, IoArrowForward, IoLockClosed } from 'react-icons/io5';
 import { authenticate, slugifyUsername } from '@/lib/auth';
-import { clientTenantSlug, ROOT_HOST } from '@/lib/tenant';
 import type { Profile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from '@/components/ui/input-group';
-import {
   Field,
   FieldLabel,
-  FieldError,
   FieldDescription,
 } from '@/components/ui/field';
+import { OTPField, OTPFieldInput } from '@/components/ui/otp-field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const schema = z.object({
-  name: z.string().min(2, 'Please enter your name'),
-  password: z.string().min(8, 'At least 8 characters'),
-});
-type FormValues = { name: string; password: string };
-
-// One unified flow: enter your name + a password. If the account exists we sign
-// you in; if not we create it. Your name is your identity in the space.
-export function AuthGate({
-  onReady,
-  inviteToken,
-}: {
-  onReady: (profile: Profile) => void;
-  inviteToken?: string;
-}) {
-  const invited = Boolean(inviteToken);
+// One unified flow: enter your name + a 4-digit PIN. If the account exists we
+// sign you in; if not we create it. Your name is your identity, and the PIN
+// also derives your end-to-end encryption keys.
+export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
+  const [name, setName] = useState('');
+  const [pin, setPin] = useState('');
   const [serverError, setServerError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [nameValue, setNameValue] = useState('');
-  // AuthGate only mounts client-side (after AuthProvider's bootstrap).
-  const slug = clientTenantSlug();
+  const [submitting, setSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { name: '', password: '' },
-  });
+  const handle = slugifyUsername(name);
+  const nameValid = Boolean(handle);
+  const canSubmit = nameValid && pin.length === 4 && !submitting;
 
-  // live preview of the derived @handle
-  const handle = slugifyUsername(nameValue);
-
-  async function onSubmit(values: FormValues) {
+  async function submit() {
+    if (!nameValid) {
+      setServerError('Please enter a name with at least 2 letters or numbers.');
+      return;
+    }
+    if (pin.length !== 4) return;
     setServerError('');
-    const result = await authenticate(values.name, values.password, inviteToken);
+    setSubmitting(true);
+    const result = await authenticate(name, pin);
     if (!result.ok) {
       setServerError(result.error);
+      setPin('');
+      setSubmitting(false);
       return;
     }
     onReady(result.profile);
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center overflow-y-auto bg-background px-4 py-8">
+    <div className="flex min-h-dvh items-center justify-center overflow-y-auto bg-background px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -90,85 +62,69 @@ export function AuthGate({
             </svg>
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight">
-            {invited ? "You're invited" : 'Messages'}
-          </h1>
-
-          {slug && (
-            <span className="mt-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-              {slug}.{ROOT_HOST}
-            </span>
-          )}
-
+          <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
           <p className="mt-3 text-[15px] leading-snug text-muted-foreground">
-            Enter your name and a password — we&apos;ll sign you in, or set you
-            up if you&apos;re new.
+            Enter your name and a 4-digit PIN — we&apos;ll sign you in, or set
+            you up if you&apos;re new.
           </p>
         </div>
 
-        {!slug && (
-          <Alert variant="error" className="mb-5 items-center">
-            <IoAlertCircle />
-            <AlertDescription className="text-destructive-foreground">
-              No space selected. Go to{' '}
-              <a href={`https://${ROOT_HOST}`} className="font-medium underline">
-                {ROOT_HOST}
-              </a>{' '}
-              to create one.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Field invalid={Boolean(errors.name)}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+          className="space-y-5"
+        >
+          <Field invalid={Boolean(serverError && !nameValid)}>
             <FieldLabel>Your name</FieldLabel>
             <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Duncan Knox"
               autoComplete="name"
               autoCapitalize="words"
               autoFocus
               enterKeyHint="next"
-              {...register('name', {
-                onChange: (e) => setNameValue(e.target.value),
-              })}
             />
-            {errors.name ? (
-              <FieldError match>{errors.name.message}</FieldError>
-            ) : (
-              handle && (
-                <FieldDescription>You&apos;ll be @{handle} here</FieldDescription>
-              )
+            {handle && (
+              <FieldDescription>You&apos;ll be @{handle}</FieldDescription>
             )}
           </Field>
 
-          <Field invalid={Boolean(errors.password)}>
-            <FieldLabel>Password</FieldLabel>
-            <InputGroup>
-              <InputGroupInput
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                placeholder="At least 8 characters"
-                enterKeyHint="go"
-                {...register('password')}
+          <Field>
+            <FieldLabel>PIN</FieldLabel>
+            <OTPField
+              size="lg"
+              length={4}
+              value={pin}
+              onValueChange={setPin}
+              onValueComplete={() => void submit()}
+              mask
+              aria-label="4-digit PIN"
+              className="justify-center gap-3"
+            >
+              <OTPFieldInput
+                aria-label="PIN digit 1 of 4"
+                className="size-14 rounded-xl text-2xl sm:size-14 sm:text-2xl"
+                inputMode="numeric"
               />
-              <InputGroupAddon align="inline-end">
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {showPassword ? (
-                    <IoEyeOffOutline className="size-5" />
-                  ) : (
-                    <IoEyeOutline className="size-5" />
-                  )}
-                </button>
-              </InputGroupAddon>
-            </InputGroup>
-            {errors.password && (
-              <FieldError match>{errors.password.message}</FieldError>
-            )}
+              <OTPFieldInput
+                aria-label="PIN digit 2 of 4"
+                className="size-14 rounded-xl text-2xl sm:size-14 sm:text-2xl"
+                inputMode="numeric"
+              />
+              <OTPFieldInput
+                aria-label="PIN digit 3 of 4"
+                className="size-14 rounded-xl text-2xl sm:size-14 sm:text-2xl"
+                inputMode="numeric"
+              />
+              <OTPFieldInput
+                aria-label="PIN digit 4 of 4"
+                className="size-14 rounded-xl text-2xl sm:size-14 sm:text-2xl"
+                inputMode="numeric"
+              />
+            </OTPField>
           </Field>
 
           {serverError && (
@@ -189,19 +145,19 @@ export function AuthGate({
 
           <Button
             type="submit"
-            loading={isSubmitting}
-            disabled={!slug}
+            loading={submitting}
+            disabled={!canSubmit}
             size="lg"
             className="w-full"
           >
-            {invited ? 'Join space' : 'Continue'}
+            Continue
             <IoArrowForward />
           </Button>
         </form>
 
         <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
           <IoLockClosed className="size-3 shrink-0" />
-          End-to-end encrypted. There&apos;s no password reset.
+          End-to-end encrypted. There&apos;s no PIN reset.
         </p>
       </motion.div>
     </div>

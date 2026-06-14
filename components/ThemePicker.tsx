@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import {
   IoBanOutline,
-  IoCheckmark,
   IoCheckmarkCircle,
   IoColorWandOutline,
 } from 'react-icons/io5';
@@ -13,7 +11,7 @@ import {
   DrawerPopup,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import type { Conversation, VibeId } from '@/lib/types';
+import type { Conversation } from '@/lib/types';
 import { useIsDesktop } from '@/lib/useIsDesktop';
 import { PATTERNS } from '@/utils/patterns';
 import { parseWallpaper, serializeWallpaper } from '@/utils/config';
@@ -24,10 +22,6 @@ import {
   type ChatTheme,
 } from '@/utils/themes';
 import { cn } from '@/lib/utils';
-import { setReactionSet, useReactionSet } from '@/lib/reactionSet';
-import { VIBES } from '@/lib/expressions';
-import { supabase } from '@/lib/supabase';
-import { iosMenu } from './ui/ios-menu';
 import {
   Select,
   SelectItem,
@@ -35,9 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { REACTION_SETS, TapbackGlyph, type ReactionSetId } from './Tapback';
-
-const menu = iosMenu();
 
 // Mini chat preview painted on each theme card, Telegram "Browse Themes" style.
 function ThemeCard({
@@ -112,13 +103,6 @@ export function ThemePicker({
   conversation: Conversation | null;
   onWallpaper: (theme: string | null) => void;
 }) {
-  const reactionSet = useReactionSet();
-  const vibe = conversation?.vibe ?? 'classic';
-  const convId = conversation?.id;
-  // The vibe lives server-side; show a spinner on the tapped card until the
-  // set_vibe RPC resolves (the new vibe then arrives via the realtime sub).
-  const [pendingVibe, setPendingVibe] = useState<VibeId | null>(null);
-
   const isDesktop = useIsDesktop();
   const wp = parseWallpaper(conversation?.wallpaper);
 
@@ -238,129 +222,6 @@ export function ThemePicker({
               </Select>
             </section>
           )}
-
-          {/* Chat vibe: one config for expressions + the chat's reaction set.
-              Each card previews its tapback pill; Classic shows your default. */}
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
-              Chat Vibe
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {VIBES.map((v) => {
-                const setId = v.id === 'classic' ? reactionSet : v.id;
-                const loading = pendingVibe === v.id;
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    disabled={!convId || pendingVibe !== null}
-                    onClick={() => {
-                      if (!convId || v.id === vibe) return;
-                      setPendingVibe(v.id);
-                      void supabase
-                        .rpc('set_vibe', { conv: convId, v: v.id })
-                        .then(() => setPendingVibe(null));
-                    }}
-                    className={cn(
-                      'cursor-pointer rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-default',
-                      vibe === v.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border',
-                    )}
-                  >
-                    <span className="flex items-center gap-1.5 text-[15px] font-medium">
-                      <v.icon
-                        className={cn(
-                          'size-4.5',
-                          vibe === v.id
-                            ? 'text-primary'
-                            : 'text-muted-foreground',
-                        )}
-                      />
-                      {v.label}
-                      {loading ? (
-                        <span
-                          aria-label="Applying"
-                          className="ml-auto size-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
-                        />
-                      ) : (
-                        vibe === v.id && (
-                          <IoCheckmark className="ml-auto size-4.5 text-primary" />
-                        )
-                      )}
-                    </span>
-                    <span className="mt-0.5 block text-[12px] text-muted-foreground">
-                      {v.blurb}
-                    </span>
-                    {/* mini tapback-pill preview of this vibe's reaction set */}
-                    <span
-                      className={menu.surface({
-                        class:
-                          'mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 shadow-sm',
-                      })}
-                    >
-                      {REACTION_SETS[setId].items.map((t) => (
-                        <TapbackGlyph
-                          key={t}
-                          value={t}
-                          className="size-3.5 text-muted-foreground"
-                        />
-                      ))}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Default reaction set — every set (not just the vibe-bound four).
-                Used in Classic chats; a non-classic vibe overrides it per chat. */}
-            <label className="mb-1.5 mt-4 block text-[13px] font-medium text-muted-foreground">
-              Reaction set
-            </label>
-            <Select
-              value={reactionSet}
-              onValueChange={(v) => setReactionSet(v as ReactionSetId)}
-            >
-              <SelectTrigger aria-label="Reaction set">
-                <SelectValue>
-                  {(value: ReactionSetId) => (
-                    <span className="flex items-center gap-2">
-                      {REACTION_SETS[value]?.label}
-                      <span className="flex items-center gap-1">
-                        {REACTION_SETS[value]?.items.map((t) => (
-                          <TapbackGlyph
-                            key={t}
-                            value={t}
-                            className="size-4 text-muted-foreground"
-                          />
-                        ))}
-                      </span>
-                    </span>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectPopup>
-                {(Object.keys(REACTION_SETS) as ReactionSetId[]).map((id) => (
-                  <SelectItem key={id} value={id}>
-                    <span className="flex items-center gap-2">
-                      <span className="w-20 shrink-0">
-                        {REACTION_SETS[id].label}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        {REACTION_SETS[id].items.map((t) => (
-                          <TapbackGlyph
-                            key={t}
-                            value={t}
-                            className="size-4 text-muted-foreground"
-                          />
-                        ))}
-                      </span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
-          </section>
         </div>
       </DrawerPopup>
     </Drawer>

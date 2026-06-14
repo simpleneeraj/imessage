@@ -10,7 +10,6 @@ import type {
   Profile,
   Reaction,
   ReactionKind,
-  VibeId,
 } from '@/lib/types';
 import { Avatar } from './Avatar';
 import { ReactionPicker } from './ReactionPicker';
@@ -99,7 +98,6 @@ export function MessageBubble({
   row,
   sender,
   me,
-  vibe = 'classic',
   reactions,
   repliedTo,
   repliedSender,
@@ -113,7 +111,6 @@ export function MessageBubble({
   row: MessageRow;
   sender: Profile | undefined;
   me: string;
-  vibe?: VibeId;
   reactions: Reaction[];
   repliedTo?: Message;
   repliedSender?: Profile;
@@ -218,7 +215,6 @@ export function MessageBubble({
           <ReactionPicker
             open={pickerOpen}
             mine={mine}
-            vibe={vibe}
             message={message}
             myReaction={myReaction}
             anchor={bubbleRef}
@@ -333,7 +329,6 @@ export function MessageBubble({
           <ReactionPicker
             open={pickerOpen}
             mine={mine}
-            vibe={vibe}
             message={message}
             myReaction={myReaction}
             anchor={bubbleRef}

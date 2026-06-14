@@ -1,23 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "./supabase";
-import { idb } from "./idb";
-import { enqueue, flushOutbox, onOutboxFlush } from "./outbox";
-import { getConvKey } from "./keys";
+import { supabase } from "@/lib/supabase";
+import { idb } from "@/lib/idb";
+import { enqueue, flushOutbox, onOutboxFlush } from "@/lib/outbox";
+import { getConvKey } from "@/lib/keys";
 import {
   decryptEnvelope,
   encryptEnvelope,
   isEnvelope,
   type MessagePayload,
-} from "./crypto";
-import { removePreview, setPreview } from "./previews";
+} from "@/lib/crypto";
+import { removePreview, setPreview } from "@/lib/previews";
 import type {
   Message,
   ParticipantMeta,
   Reaction,
   ReactionKind,
-} from "./types";
+} from "@/lib/types";
 
 const TYPING_THROTTLE_MS = 2000;
 const TYPING_EXPIRY_MS = 4000;

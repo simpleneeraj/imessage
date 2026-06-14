@@ -30,8 +30,6 @@ export type Conversation = {
   /** My own participant row metadata. */
   myLastReadAt?: string | null;
   myHiddenAt?: string | null;
-  /** My passcode gate for this chat (PBKDF2 hash; null = no lock). */
-  myPasscodeHash?: string | null;
 };
 
 export type MessageStatus = "sending" | "queued" | "sent";

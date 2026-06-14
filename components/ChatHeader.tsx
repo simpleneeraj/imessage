@@ -44,8 +44,6 @@ export function ChatHeader({
   conversationId: string;
   onOpenDetails?: () => void;
   onOpenTheme?: () => void;
-  onOpenPasscode?: () => void;
-  hasPasscode?: boolean;
   vanish: boolean;
   onToggleVanish: () => void;
   isAdmin: boolean;

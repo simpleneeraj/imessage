@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/drawer';
 import { supabase } from '@/lib/supabase';
 import { grantConvKey } from '@/lib/keys';
+import { useAddMembers } from '@/hooks/useAddMembers';
 import type { Conversation, Profile } from '@/lib/types';
 import { Avatar } from './Avatar';
 import { useIsDesktop } from '@/lib/useIsDesktop';
@@ -39,6 +40,7 @@ export function ChatDetails({
 
   const convId = conversation?.id;
   const isAdmin = conversation?.created_by === me;
+  const { trigger: addMembers } = useAddMembers();
 
   const refreshMembers = useCallback(async () => {
     if (!convId) return;
@@ -96,17 +98,19 @@ export function ChatDetails({
   async function addMember(p: Profile) {
     if (!convId || busy) return;
     setBusy(true);
-    const { data, error } = await supabase.rpc('add_members', {
-      conv: convId,
-      usernames: [p.username],
-    });
-    if (!error && data) {
-      for (const added of data as Profile[]) {
-        await grantConvKey(convId, added, me);
+    try {
+      const added = await addMembers({
+        conversationId: convId,
+        usernames: [p.username],
+      });
+      for (const member of added) {
+        await grantConvKey(convId, member, me);
       }
       setQuery('');
       setResults([]);
       await refreshMembers();
+    } catch {
+      // leave the search state so the user can retry
     }
     setBusy(false);
   }

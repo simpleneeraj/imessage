@@ -19,6 +19,7 @@ Video/Audio Calling + Voice Messages feature + @mention peoples
   (D) - no tenant based
   (D) - using a 4 digit pin we can login and auto logout witin 5 min using cookie of inactiveity and remove the passcode feature
   (D) - keep single reaction only same like ios message have
+
   () - At the landing page show the questos and a pin box where she can enter the pin and enter into the chat
   Tell me plan first i have to make it for my girl friend only so
   () - If she text me how i know ? need to implement that as well

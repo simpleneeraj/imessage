@@ -8,7 +8,9 @@ import { supabase } from '@/lib/supabase';
 import { idb } from '@/lib/idb';
 import { encryptAndUpload } from '@/lib/attachments';
 import { useAuth } from './AuthProvider';
-import { useMessages } from '@/lib/useMessages';
+import { useMessages } from '@/hooks/useMessages';
+import { useEvents } from '@/hooks/useEvents';
+import { useConversationActions } from '@/hooks/useConversationActions';
 import type { Conversation, Message, Profile } from '@/lib/types';
 import { ChatHeader } from './ChatHeader';
 import { MessageList } from './MessageList';
@@ -17,24 +19,19 @@ import { OfflineBanner } from './OfflineBanner';
 import { ChatDetails } from './ChatDetails';
 import { ThemePicker } from './ThemePicker';
 import { Celebration } from './Celebration';
-import { LockScreen } from './LockScreen';
-import { PasscodeDialog } from './PasscodeDialog';
 import type { Expression } from '@/lib/expressions';
 import MaskWallpaper from '@/plugins/mask-wallpaper';
 import { parseWallpaper, wallpaperOptionsFor } from '@/utils/config';
-import { bubbleSolid } from '@/utils/themes';
-import { useEvents } from '@/lib/useEvents';
 
 type ConversationRow = Omit<Conversation, 'participants'> & {
   conversation_participants: {
     user_id: string;
     nickname: string | null;
-    passcode_hash: string | null;
     profiles: Profile;
   }[];
 };
 
-function useConversation(id: string, me: string): Conversation | null {
+function useConversation(id: string): Conversation | null {
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
   useEffect(() => {
@@ -49,7 +46,7 @@ function useConversation(id: string, me: string): Conversation | null {
       void supabase
         .from('conversations')
         .select(
-          '*, conversation_participants(user_id, nickname, passcode_hash, profiles(*))',
+          '*, conversation_participants(user_id, nickname, profiles(*))',
         )
         .eq('id', id)
         .maybeSingle()
@@ -64,9 +61,6 @@ function useConversation(id: string, me: string): Conversation | null {
               nickname: p.nickname,
               display_name: p.nickname ?? p.profiles.display_name,
             })),
-            myPasscodeHash:
-              conversation_participants.find((p) => p.user_id === me)
-                ?.passcode_hash ?? null,
           };
           setConversation(fresh);
           void idb.putAll('conversations', [fresh]);
@@ -105,66 +99,17 @@ function useConversation(id: string, me: string): Conversation | null {
       cancelled = true;
       void supabase.removeChannel(channel);
     };
-  }, [id, me]);
+  }, [id]);
 
   return conversation;
 }
 
-export function ChatThread({
-  id,
-  initialPasscodeHash = null,
-  initialTitle = '',
-}: {
-  id: string;
-  initialPasscodeHash?: string | null;
-  initialTitle?: string;
-}) {
+export function ChatThread({ id }: { id: string }) {
   const { userId } = useAuth();
-  const conversation = useConversation(id, userId);
-
-  const [unlocked, setUnlocked] = useState(false);
-  const [hashOverride, setHashOverride] = useState<string | null | undefined>(
-    undefined,
-  );
-  const myPasscodeHash =
-    hashOverride !== undefined
-      ? hashOverride
-      : conversation
-        ? (conversation.myPasscodeHash ?? null)
-        : initialPasscodeHash;
-  const locked = Boolean(myPasscodeHash) && !unlocked;
-
-  const others = conversation?.participants.filter((p) => p.id !== userId) ?? [];
-  const title = !conversation
-    ? initialTitle
-    : conversation.is_group
-      ? (conversation.name ?? `${others.length} People`)
-      : (others[0]?.display_name ?? 'Chat');
-
-  if (locked && myPasscodeHash) {
-    return (
-      <div className="relative flex h-full min-h-0 flex-col bg-background">
-        <LockScreen
-          conversationId={id}
-          passcodeHash={myPasscodeHash}
-          title={title || 'This chat'}
-          onUnlock={() => setUnlocked(true)}
-        />
-      </div>
-    );
-  }
+  const conversation = useConversation(id);
 
   return (
-    <ChatThreadInner
-      id={id}
-      userId={userId}
-      conversation={conversation}
-      myPasscodeHash={myPasscodeHash}
-      onPasscodeChange={(hash) => {
-        setHashOverride(hash);
-        setUnlocked(true);
-      }}
-    />
+    <ChatThreadInner id={id} userId={userId} conversation={conversation} />
   );
 }
 
@@ -172,14 +117,10 @@ function ChatThreadInner({
   id,
   userId,
   conversation,
-  myPasscodeHash,
-  onPasscodeChange,
 }: {
   id: string;
   userId: string;
   conversation: Conversation | null;
-  myPasscodeHash: string | null;
-  onPasscodeChange: (hash: string | null) => void;
 }) {
   const router = useRouter();
   const {
@@ -214,8 +155,6 @@ function ChatThreadInner({
     () => conversation?.participants.filter((p) => p.id !== userId) ?? [],
     [conversation, userId],
   );
-
-  const [passcodeOpen, setPasscodeOpen] = useState(false);
 
   const vibe = conversation?.vibe ?? 'classic';
   const [celebration, setCelebration] = useState<{
@@ -259,43 +198,35 @@ function ChatThreadInner({
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [markRead, messages.length]);
 
+  const actions = useConversationActions(id);
+
   const vanish = conversation?.vanish_mode ?? false;
   useEffect(() => {
     if (!vanish) return;
     const sweep = () => {
-      if (navigator.onLine) {
-        void supabase.rpc('delete_vanished', { conv: id }).then(() => {});
-      }
+      if (navigator.onLine) actions.deleteVanished();
     };
     window.addEventListener('pagehide', sweep);
     return () => {
       window.removeEventListener('pagehide', sweep);
       sweep();
     };
-  }, [vanish, id]);
+  }, [vanish, actions]);
 
   const isAdmin = conversation?.created_by === userId;
   const deleted = Boolean(conversation?.deleted_at);
 
-  const toggleVanish = () =>
-    void supabase
-      .rpc('set_vanish_mode', { conv: id, enabled: !vanish })
-      .then(() => {});
+  const toggleVanish = () => actions.setVanishMode(!vanish);
 
   const deleteForMe = () => {
-    void supabase.rpc('hide_conversation', { conv: id }).then(() => {});
+    actions.hideConversation();
     router.push('/chats');
   };
   const deleteForEveryone = () => {
-    void supabase
-      .rpc('set_conversation_deleted', { conv: id, deleted: true })
-      .then(() => {});
+    actions.setDeleted(true);
     router.push('/chats');
   };
-  const restore = () =>
-    void supabase
-      .rpc('set_conversation_deleted', { conv: id, deleted: false })
-      .then(() => {});
+  const restore = () => actions.setDeleted(false);
 
   const title = !conversation
     ? ''
@@ -334,8 +265,6 @@ function ChatThreadInner({
           conversationId={id}
           onOpenDetails={() => setDetailsOpen(true)}
           onOpenTheme={() => setThemeOpen(true)}
-          onOpenPasscode={() => setPasscodeOpen(true)}
-          hasPasscode={Boolean(myPasscodeHash)}
           vanish={vanish}
           onToggleVanish={toggleVanish}
           isAdmin={isAdmin}
@@ -372,7 +301,6 @@ function ChatThreadInner({
           participantsMeta={participantsMeta}
           typingUserIds={typingUserIds}
           events={events}
-          vibe={vibe}
           onReact={(messageId, kind) => void react(messageId, kind)}
           onReply={setReplyingTo}
           onUnsend={(msg) => void unsend(msg)}
@@ -429,19 +357,7 @@ function ChatThreadInner({
         open={themeOpen}
         onOpenChange={setThemeOpen}
         conversation={conversation}
-        onWallpaper={(theme) => {
-          void supabase
-            .rpc('set_wallpaper', { conv: id, theme })
-            .then(() => {});
-        }}
-      />
-
-      <PasscodeDialog
-        open={passcodeOpen}
-        onOpenChange={setPasscodeOpen}
-        conversationId={id}
-        hasPasscode={Boolean(myPasscodeHash)}
-        onChanged={onPasscodeChange}
+        onWallpaper={(theme) => actions.setWallpaper(theme)}
       />
 
       <AnimatePresence>
