@@ -59,13 +59,12 @@ const TAPBACK_ICONS: Record<string, IconType> = {
   emphasis: HiExclamationCircle,
   question: HiQuestionMarkCircle,
 
-  // Couple — warmth & romance
+  // Couple — warmth & romance (also reuses `heart` from Classic)
   sparkles: HiSparkles,
   fire: HiFire,
   gift: HiGift,
   cake: HiCake,
   moon: HiMoon,
-  sun: HiSun,
 
   // Friends — hype & play
   star: HiStar,
@@ -107,8 +106,9 @@ const TAPBACK_ICONS: Record<string, IconType> = {
   truck: HiTruck,
   plane: HiPaperAirplane,
 
-  // Legacy tokens — kept so historical reactions still render after the
+  // Legacy / spare tokens — kept so historical reactions still render after the
   // Heroicons migration. Not offered in any set anymore.
+  sun: HiSun,
   sad: HiEmojiSad,
   check: HiCheckCircle,
   shield: HiShieldCheck,
@@ -127,8 +127,9 @@ export type ReactionSetId =
   | "creative"
   | "travel";
 
-// Curated sets. Every glyph is unique — no icon repeats within a set or across
-// sets — so each set has its own distinct visual identity.
+// Curated sets. Glyphs are unique within a set; across sets they're distinct
+// too, except `heart` — intentionally shared by Classic and Couple as the
+// universal love icon (a romance set without a heart felt wrong).
 export const REACTION_SETS: Record<
   ReactionSetId,
   { label: string; items: string[] }
@@ -139,7 +140,7 @@ export const REACTION_SETS: Record<
   },
   couple: {
     label: "Couple",
-    items: ["sparkles", "fire", "gift", "cake", "moon", "sun"],
+    items: ["heart", "sparkles", "fire", "gift", "cake", "moon"],
   },
   friends: {
     label: "Friends",

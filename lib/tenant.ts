@@ -1,10 +1,13 @@
 // Subdomain → tenant ("space") resolution.
 //
-// Production hosts look like `<slug>.chat.cutecode.app`; the bare apex
-// `chat.cutecode.app` is the root/onboarding domain (no tenant). Local dev uses
-// `<slug>.localhost` (Chromium/Safari resolve any *.localhost to 127.0.0.1).
-
-export const ROOT_HOST = 'chat.cutecode.app';
+// Production hosts look like `<slug>.<ROOT_HOST>`; the bare apex `<ROOT_HOST>`
+// is the root/onboarding domain (no tenant). Local dev uses `<slug>.localhost`
+// (Chromium/Safari resolve any *.localhost to 127.0.0.1).
+//
+// The apex domain is environment-specific, so it comes from
+// NEXT_PUBLIC_ROOT_HOST (inlined at build for both client and server) rather
+// than being hardcoded here.
+export const ROOT_HOST = process.env.NEXT_PUBLIC_ROOT_HOST ?? '';
 
 // Subdomains that are infrastructure, not spaces.
 const RESERVED = new Set([

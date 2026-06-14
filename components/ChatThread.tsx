@@ -372,7 +372,12 @@ function ChatThreadInner({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="shrink-0 overflow-hidden bg-linear-to-r from-[#3b2a6e] via-[#5e5ce6] to-[#3b2a6e] text-center"
+              // gradient derived from the chat accent so it tracks the theme
+              style={{
+                background:
+                  'linear-gradient(to right, color-mix(in oklab, var(--imsg-bubble-out) 45%, #000), var(--imsg-bubble-out), color-mix(in oklab, var(--imsg-bubble-out) 45%, #000))',
+              }}
+              className="shrink-0 overflow-hidden text-center"
             >
               <p className="px-4 py-1.5 text-[12px] font-medium text-white/90">
                 Vanish mode — messages disappear after everyone has seen them

@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { IoBanOutline, IoCheckmark, IoCheckmarkCircle } from 'react-icons/io5';
+import {
+  IoBanOutline,
+  IoCheckmark,
+  IoCheckmarkCircle,
+  IoColorWandOutline,
+} from 'react-icons/io5';
 import {
   Drawer,
   DrawerHeader,
@@ -167,12 +172,26 @@ export function ThemePicker({
             ))}
           </section>
 
-          {/* Bubble colour — independent of the wallpaper */}
+          {/* Bubble colour — overrides the theme accent for this chat only */}
           <section>
             <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
               Bubble Color
             </h3>
             <div className="flex flex-wrap items-center gap-2.5">
+              {/* Match-theme: clears the override so the bubble follows the
+                  active palette accent (--imsg-bubble-out via bg-imsg-blue). */}
+              <button
+                type="button"
+                title="Match theme"
+                aria-label="Match theme color"
+                onClick={() => apply({ ...wp, bubble: undefined })}
+                className={cn(
+                  'flex size-9 cursor-pointer items-center justify-center rounded-full bg-imsg-blue text-white ring-offset-2 ring-offset-background active:opacity-80',
+                  !wp?.bubble && 'ring-2 ring-imsg-blue',
+                )}
+              >
+                <IoColorWandOutline className="size-4.5" />
+              </button>
               {BUBBLE_COLORS.map((c) => (
                 <button
                   key={c.value}
@@ -182,12 +201,11 @@ export function ThemePicker({
                   onClick={() => apply({ ...wp, bubble: c.value })}
                   className={cn(
                     'flex size-9 cursor-pointer items-center justify-center rounded-full ring-offset-2 ring-offset-background active:opacity-80',
-                    (wp?.bubble ?? BUBBLE_COLORS[0].value) === c.value &&
-                      'ring-2 ring-imsg-blue',
+                    wp?.bubble === c.value && 'ring-2 ring-imsg-blue',
                   )}
                   style={{ background: c.value }}
                 >
-                  {(wp?.bubble ?? BUBBLE_COLORS[0].value) === c.value && (
+                  {wp?.bubble === c.value && (
                     <IoCheckmarkCircle className="size-5 text-white" />
                   )}
                 </button>

@@ -2,11 +2,14 @@
 // "anthropic-dark". One provider drives both dimensions (see app/layout.tsx);
 // the matching CSS lives in globals.css as `.<palette>-<mode>` token blocks.
 
+// `id` is persisted by next-themes and keys the `.{id}-{mode}` CSS blocks in
+// globals.css — never rename an id. `label` is display-only and safe to change.
 export const PALETTES = [
-  { id: 'imessage', label: 'iMessage' },
-  { id: 'neutral', label: 'Neutral' },
-  { id: 'anthropic', label: 'Anthropic' },
-  { id: 'royal', label: 'Royal' },
+  { id: 'imessage', label: 'Cobalt' },
+  { id: 'neutral', label: 'Graphite' },
+  { id: 'anthropic', label: 'Clay' },
+  { id: 'royal', label: 'Amethyst' },
+  { id: 'beige', label: 'Sand' },
 ] as const;
 
 export type PaletteId = (typeof PALETTES)[number]['id'];

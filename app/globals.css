@@ -6,7 +6,7 @@
 /* Dark mode is now any of the combined "<palette>-dark" theme classes
    next-themes sets on <html>. Listed explicitly (not [class$=-dark]) so it's
    independent of class order. */
-@custom-variant dark (&:is(.imessage-dark *, .neutral-dark *, .anthropic-dark *, .royal-dark *));
+@custom-variant dark (&:is(.imessage-dark *, .neutral-dark *, .anthropic-dark *, .royal-dark *, .beige-dark *));
 
 /* iMessage design tokens — runtime vars (set in :root/.dark below) so the
    whole palette, including the bubble-tail pseudo-elements, flips with theme */
@@ -417,7 +417,7 @@
 
 /* ---------- Anthropic: warm cream + Claude coral ---------- */
 .anthropic-light {
-  --imsg-bubble-out: #d97757;
+  --imsg-bubble-out: #b45736; /* terracotta; white text ≈ 4.8:1 (AA) */
   --imsg-bubble-out-bg: var(--imsg-bubble-out);
   --imsg-bubble-in: #ebe7dd;
   --imsg-chat-bg: #faf9f5;
@@ -441,7 +441,7 @@
 }
 .anthropic-dark {
   color-scheme: dark;
-  --imsg-bubble-out: #d97757;
+  --imsg-bubble-out: #b45736; /* terracotta; white text ≈ 4.8:1 (AA) */
   --imsg-bubble-out-bg: var(--imsg-bubble-out);
   --imsg-bubble-in: #36322c;
   --imsg-chat-bg: #262624;
@@ -511,6 +511,54 @@
   --sidebar: #181226;
 }
 
+/* ---------- Sand: soft warm tan, bronze accent ---------- */
+.beige-light {
+  --imsg-bubble-out: #9a6a3b; /* bronze; white text ≈ 4.7:1 (AA) */
+  --imsg-bubble-out-bg: var(--imsg-bubble-out);
+  --imsg-bubble-in: #ece3d2;
+  --imsg-chat-bg: #f7f2e8;
+  --imsg-text-gray: #7c7363; /* on chat-bg ≈ 4.6:1 */
+  --imsg-separator: #e6ddcc;
+  --imsg-chevron: #cdc3ad;
+  --imsg-bar: #f0eadc;
+  --background: #f7f2e8;
+  --foreground: #3a342a; /* ≈ 11:1 on background */
+  --primary: #9a6a3b;
+  --primary-foreground: #ffffff;
+  --accent: #ece3d2;
+  --accent-foreground: #3a342a;
+  --muted: #ece3d2;
+  --muted-foreground: #6e6757; /* ≈ 5.7:1 */
+  --ring: #9a6a3b;
+  --border: color-mix(in srgb, #3a342a 10%, transparent);
+  --card: #fdfaf3;
+  --popover: #fdfaf3;
+  --sidebar: #f1ebdd;
+}
+.beige-dark {
+  color-scheme: dark;
+  --imsg-bubble-out: #a06e3c; /* bronze; white text ≈ 4.6:1 (AA) */
+  --imsg-bubble-out-bg: var(--imsg-bubble-out);
+  --imsg-bubble-in: #34302a;
+  --imsg-chat-bg: #1d1b17;
+  --imsg-text-gray: #a59c8a; /* on chat-bg ≈ 6.3:1 */
+  --imsg-separator: #353027;
+  --imsg-chevron: #4a4338;
+  --imsg-bar: #17150f;
+  --background: #1d1b17;
+  --foreground: #ece5d6; /* ≈ 13:1 on background */
+  --primary: #c79256;
+  --primary-foreground: #221d16;
+  --accent: --alpha(var(--color-white) / 6%);
+  --accent-foreground: #ece5d6;
+  --muted: --alpha(var(--color-white) / 5%);
+  --muted-foreground: #aaa192; /* ≈ 6.6:1 */
+  --ring: #c79256;
+  --card: #282520;
+  --popover: #282520;
+  --sidebar: #211e19;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -531,61 +579,38 @@
 }
 
 /*
- * iMessage bubble tails — classic two-pseudo-element technique.
- * ::before draws a blob in the bubble color hooking outward past the bottom
- * corner; ::after masks it with the page background, leaving a curved tail.
- * Requires flat bubble colors and a solid white chat background.
+ * iMessage bubble tails — a single clip-path pseudo filled with the bubble
+ * colour. Unlike the old two-element "paint the page background to carve a
+ * tail" trick, this needs no flat background, so the tail renders cleanly over
+ * the grain wash, any wallpaper, and every palette. The clip box overlaps the
+ * bubble's bottom corner by ~5px so the colours merge seamlessly.
  */
 .tail {
   position: relative;
 }
 
-.tail-out::before {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  bottom: 0;
-  right: -7px;
-  width: 20px;
-  height: 20px;
-  background: var(--imsg-bubble-out-bg);
-  border-bottom-left-radius: 16px 14px;
-}
-/* Mask width covers only the blob's 7px overhang, so it can't repaint over
-   neighbouring content (avatars) or overflow the viewport. */
 .tail-out::after {
   content: '';
   position: absolute;
-  z-index: 1;
+  z-index: 0;
   bottom: 0;
-  right: -11px;
-  width: 11px;
-  height: 20px;
-  background: var(--imsg-chat-bg);
-  border-bottom-left-radius: 10px;
+  right: -9px;
+  width: 14px;
+  height: 18px;
+  background: var(--imsg-bubble-out-bg);
+  clip-path: path('M0 0 C0 10 4 16 14 18 C8 16 2 13 0 7 Z');
 }
 
-.tail-in::before {
+.tail-in::after {
   content: '';
   position: absolute;
   z-index: 0;
   bottom: 0;
-  left: -7px;
-  width: 20px;
-  height: 20px;
+  left: -9px;
+  width: 14px;
+  height: 18px;
   background: var(--imsg-bubble-in);
-  border-bottom-right-radius: 16px 14px;
-}
-.tail-in::after {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  bottom: 0;
-  left: -11px;
-  width: 11px;
-  height: 20px;
-  background: var(--imsg-chat-bg);
-  border-bottom-right-radius: 10px;
+  clip-path: path('M14 0 C14 10 10 16 0 18 C6 16 12 13 14 7 Z');
 }
 
 /* iOS hairline separators (0.5px on retina) */
@@ -593,32 +618,52 @@
   box-shadow: inset 0 -0.5px 0 var(--color-imsg-separator);
 }
 
-/* With a wallpaper the chat background is the gradient, so the bubble-tail
-   masks (which paint a flat color) would seam — drop the tails and let the
-   message area show the wallpaper through. */
+/* With a wallpaper the chat background is the gradient, so the message area
+   shows it through. Tails are clip-path shapes in the bubble colour now, so
+   they render fine over the wallpaper and stay enabled. */
 .has-wallpaper {
   --imsg-chat-bg: transparent;
 }
-.has-wallpaper .tail-out::before,
-.has-wallpaper .tail-out::after,
-.has-wallpaper .tail-in::before,
-.has-wallpaper .tail-in::after {
-  display: none;
+
+/* Default chat canvas: a faint accent wash (glow near the top, tinted by the
+   active palette via --imsg-bubble-out) over a soft-light noise grain, painted
+   on the message scroller. --imsg-chat-bg stays a solid so the bubble tails
+   still mask cleanly; the wash sits behind the bubbles. The background does not
+   scroll (it's the scroller's own box), so the glow stays anchored to the top.
+   A wallpaper or vanish mode owns the background instead — wash/grain off. */
+.chat-canvas {
+  background-color: var(--imsg-chat-bg);
+  background-image:
+    radial-gradient(
+      150% 95% at 50% -25%,
+      color-mix(in oklab, var(--imsg-bubble-out) 11%, transparent),
+      transparent 55%
+    ),
+    url('https://assets.aceternity.com/noise.webp');
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 200px;
+  background-blend-mode: normal, soft-light;
+}
+.has-wallpaper .chat-canvas,
+.vanish .chat-canvas {
+  background-image: none;
 }
 
 /* Vanish mode: a local re-theme of the thread. The chat background must stay
    FLAT (the tail masks paint --imsg-chat-bg over the bubble blobs), so the
-   moody gradient lives in the banner strip only. */
+   moody gradient lives in the banner strip only.
+   Colours are derived from the chat's accent (--imsg-bubble-out) so vanish
+   tracks the active theme rather than a fixed indigo. The bubble accent itself
+   is intentionally NOT overridden here — it keeps the palette colour, and
+   re-deriving it from itself would be circular. */
 .vanish {
-  --imsg-chat-bg: #0b0b14;
-  --imsg-bubble-in: #26263a;
-  --imsg-bubble-out: #5e5ce6;
-  --imsg-bubble-out-bg: var(--imsg-bubble-out);
-  --imsg-text-gray: #8e8ea8;
-  --imsg-bar: #11111c;
-  --imsg-separator: #2c2c44;
-  --imsg-chevron: #4a4a66;
+  --imsg-chat-bg: color-mix(in oklab, var(--imsg-bubble-out) 16%, #06060a);
+  --imsg-bubble-in: color-mix(in oklab, var(--imsg-bubble-out) 26%, #0d0d12);
+  --imsg-text-gray: color-mix(in oklab, var(--imsg-bubble-out) 30%, #9b9bac);
+  --imsg-bar: color-mix(in oklab, var(--imsg-bubble-out) 12%, #06060a);
+  --imsg-separator: color-mix(in oklab, var(--imsg-bubble-out) 26%, #20202a);
+  --imsg-chevron: color-mix(in oklab, var(--imsg-bubble-out) 32%, #34343e);
   --foreground: oklch(0.97 0 0);
-  --background: oklch(0.15 0.02 285);
+  --background: color-mix(in oklab, var(--imsg-bubble-out) 14%, #06060a);
   color-scheme: dark;
 }

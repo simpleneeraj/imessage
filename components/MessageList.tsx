@@ -173,7 +173,7 @@ export function MessageList({
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto overscroll-contain bg-(--imsg-chat-bg)"
+      className="chat-canvas flex-1 overflow-y-auto overscroll-contain"
     >
       <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col justify-end px-4 pb-2 pt-2">
         {timeline.map((item) =>

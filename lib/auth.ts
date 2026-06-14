@@ -24,8 +24,10 @@ export const MIN_PASSWORD_LENGTH = 8;
 
 export type AuthResult =
   | { ok: true; profile: Profile }
-  // `code: 'exists'` = the account is already registered (→ try sign-in).
-  | { ok: false; error: string; code?: 'exists' | 'no-space' };
+  // `code: 'exists'`      = the account is already registered (→ try sign-in).
+  // `code: 'auth-failed'` = wrong password or no such account (→ try sign-up).
+  // No code on other failures = authenticated but couldn't finish (surface it).
+  | { ok: false; error: string; code?: 'exists' | 'no-space' | 'auth-failed' };
 
 const NO_SPACE_ERROR =
   'Open this app from your space, e.g. https://your-space.chat.cutecode.app';
@@ -167,7 +169,8 @@ async function attemptSignIn(
     password: authPassword,
   });
   if (error || !data.user) {
-    return { ok: false, error: 'Wrong password.' };
+    // Wrong password OR no such account — caller falls back to sign-up.
+    return { ok: false, error: 'Wrong password.', code: 'auth-failed' };
   }
   const userId = data.user.id;
 
@@ -232,8 +235,14 @@ async function attemptSignIn(
 }
 
 // Single entry point: have an account → log in; don't → create one. The name
-// is the identity (username = slugify(name)); we sign-up-first because it's the
-// only reliable "does this account exist?" signal and creates nothing on error.
+// is the identity (username = slugify(name)).
+//
+// We sign IN first, then fall back to sign-up. This is deliberate: signing in
+// never touches the member cap, so a returning member always gets back in even
+// when the space is full (2/2). Only a genuinely new account reaches sign-up
+// (and thus redeem_invite / the cap trigger). Doing it the other way round let
+// a returning member trip "space is full" whenever signUp failed to cleanly
+// report an existing account (e.g. under email-enumeration protection).
 export async function authenticate(
   name: string,
   password: string,
@@ -260,6 +269,15 @@ export async function authenticate(
   // PBKDF2 is expensive — derive once and reuse for whichever path we take.
   const derived = await deriveKeys(tenantIdentity(slug, username), password);
 
+  // Returning member → straight in, no cap involved.
+  const signedIn = await attemptSignIn(username, slug, derived);
+  if (signedIn.ok) return signedIn;
+  // Authenticated but couldn't finish (e.g. broken profile/keys) → surface it;
+  // don't fall through to sign-up and mislabel it as a wrong password.
+  if (signedIn.code !== 'auth-failed') return signedIn;
+
+  // Auth failed: either the account doesn't exist yet (→ create it) or the
+  // password is wrong. attemptSignUp distinguishes the two via 'exists'.
   const created = await attemptSignUp(
     name,
     username,
@@ -268,15 +286,16 @@ export async function authenticate(
     derived,
     inviteToken,
   );
-  if (created.ok || created.code !== 'exists') return created;
-
-  // Account already exists → returning member; log them in.
-  const signedIn = await attemptSignIn(username, slug, derived);
-  if (signedIn.ok) return signedIn;
-  return {
-    ok: false,
-    error: `Wrong password for “${name.trim()}” in this space.`,
-  };
+  if (created.ok) return created;
+  if (created.code === 'exists') {
+    // Account exists but sign-in just failed → it was the wrong password.
+    return {
+      ok: false,
+      error: `Wrong password for “${name.trim()}” in this space.`,
+    };
+  }
+  // Real sign-up failure (space full, invite required, …) — surface it.
+  return created;
 }
 
 export async function signOut(): Promise<void> {
