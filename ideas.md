@@ -23,4 +23,6 @@ Video/Audio Calling + Voice Messages feature + @mention peoples
   () - At the landing page show the questos and a pin box where she can enter the pin and enter into the chat
   Tell me plan first i have to make it for my girl friend only so
   () - If she text me how i know ? need to implement that as well
-  () - Heart in the right then show show msg (love, like, miss)
+  (D) - Heart in the right then show show msg (love, like, miss)
+
+claude --resume 554123c1-8fba-4356-a11d-8b2d8aaa2a05

@@ -2,7 +2,7 @@
 @import './mask-wallpaper.css';
 
 /* Dark mode is any of the combined "<palette>-dark" theme classes. */
-@custom-variant dark (&:is(.imessage-dark *, .neutral-dark *, .anthropic-dark *, .royal-dark *, .beige-dark *));
+@custom-variant dark (&:is(.imessage-dark *, .neutral-dark *, .anthropic-dark *, .beige-dark *));
 
 @theme inline {
   --font-sans: var(--font-sans);
@@ -43,10 +43,13 @@
   --color-card: var(--card);
   --animate-skeleton: skeleton 2s -1s infinite linear;
   --animate-caret-blink: 1s ease-out infinite caret-blink;
-  --animate-toast-success-odd: toast-success-odd 0.32s cubic-bezier(0.5, 1, 0.89, 1);
-  --animate-toast-success-even: toast-success-even 0.32s cubic-bezier(0.5, 1, 0.89, 1);
+  --animate-toast-success-odd: toast-success-odd 0.32s
+    cubic-bezier(0.5, 1, 0.89, 1);
+  --animate-toast-success-even: toast-success-even 0.32s
+    cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-error-odd: toast-error-odd 0.28s cubic-bezier(0.5, 1, 0.89, 1);
-  --animate-toast-error-even: toast-error-even 0.28s cubic-bezier(0.5, 1, 0.89, 1);
+  --animate-toast-error-even: toast-error-even 0.28s
+    cubic-bezier(0.5, 1, 0.89, 1);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -71,30 +74,66 @@
     }
   }
   @keyframes toast-success-odd {
-    0% { scale: 1; }
-    30% { scale: 1.025; }
-    60% { scale: 0.99; }
-    100% { scale: 1; }
+    0% {
+      scale: 1;
+    }
+    30% {
+      scale: 1.025;
+    }
+    60% {
+      scale: 0.99;
+    }
+    100% {
+      scale: 1;
+    }
   }
   @keyframes toast-error-odd {
-    0% { translate: 0 0; }
-    25% { translate: -3px 0; }
-    50% { translate: 3px 0; }
-    75% { translate: -3px 0; }
-    100% { translate: 0 0; }
+    0% {
+      translate: 0 0;
+    }
+    25% {
+      translate: -3px 0;
+    }
+    50% {
+      translate: 3px 0;
+    }
+    75% {
+      translate: -3px 0;
+    }
+    100% {
+      translate: 0 0;
+    }
   }
   @keyframes toast-success-even {
-    0% { scale: 1; }
-    30% { scale: 1.025; }
-    60% { scale: 0.99; }
-    100% { scale: 1; }
+    0% {
+      scale: 1;
+    }
+    30% {
+      scale: 1.025;
+    }
+    60% {
+      scale: 0.99;
+    }
+    100% {
+      scale: 1;
+    }
   }
   @keyframes toast-error-even {
-    0% { translate: 0 0; }
-    25% { translate: -3px 0; }
-    50% { translate: 3px 0; }
-    75% { translate: -3px 0; }
-    100% { translate: 0 0; }
+    0% {
+      translate: 0 0;
+    }
+    25% {
+      translate: -3px 0;
+    }
+    50% {
+      translate: 3px 0;
+    }
+    75% {
+      translate: -3px 0;
+    }
+    100% {
+      translate: 0 0;
+    }
   }
   @keyframes msg-highlight {
     0%,
@@ -185,7 +224,11 @@
   --muted-foreground: #98989f;
   --accent: --alpha(var(--color-white) / 4%);
   --accent-foreground: var(--color-neutral-100);
-  --destructive: color-mix(in srgb, var(--color-red-500) 90%, var(--color-white));
+  --destructive: color-mix(
+    in srgb,
+    var(--color-red-500) 90%,
+    var(--color-white)
+  );
   --destructive-foreground: var(--color-red-400);
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-400);

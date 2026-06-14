@@ -14,7 +14,8 @@ import {
   HiTrophy,
 } from 'react-icons/hi2';
 import type { VibeId } from './types';
-
+import { GiLovers } from 'react-icons/gi';
+import { FaKissWinkHeart } from 'react-icons/fa';
 // Quick expressions unlocked by a chat's vibe. Sent as E2EE payloads
 // { kind: 'expression' } so both sides can fire the matching effect.
 // Icons only (hi2) — no emoji.
@@ -84,27 +85,87 @@ export const EXPRESSIONS: Record<VibeId, Expression[]> = {
       },
     },
     {
-      id: 'like',
-      label: 'Like you',
-      icon: HiHandThumbUp,
-      text: 'I like you',
+      id: 'thinking',
+      label: 'Thinking of you',
+      icon: HiSparkles,
+      text: 'Thinking about you',
       effect: 'hearts',
       palette: {
-        gradient: ['rgb(120,190,255)', 'rgb(160,220,255)', 'rgb(120,240,255)'],
-        glow: 'bg-sky-500/10',
-        iconGradient: 'from-sky-400 to-cyan-500',
+        gradient: ['rgb(180,160,255)', 'rgb(220,180,255)', 'rgb(255,180,220)'],
+        glow: 'bg-violet-500/10',
+        iconGradient: 'from-violet-400 to-fuchsia-500',
       },
     },
+    // {
+    //   id: 'like',
+    //   label: 'Like you',
+    //   icon: HiHandThumbUp,
+    //   text: 'I like you',
+    //   effect: 'hearts',
+    //   palette: {
+    //     gradient: ['rgb(120,190,255)', 'rgb(160,220,255)', 'rgb(120,240,255)'],
+    //     glow: 'bg-sky-500/10',
+    //     iconGradient: 'from-sky-400 to-cyan-500',
+    //   },
+    // },
     {
       id: 'hug',
       label: 'Big hug',
-      icon: HiSparkles,
+      icon: GiLovers,
       text: 'Sending you the biggest hug',
       effect: 'confetti',
       palette: {
         gradient: ['rgb(255,190,120)', 'rgb(255,170,200)', 'rgb(200,170,255)'],
         glow: 'bg-orange-500/10',
         iconGradient: 'from-orange-400 to-purple-500',
+      },
+    },
+    {
+      id: 'kiss',
+      label: 'Kiss',
+      icon: FaKissWinkHeart,
+      text: 'Sending you a kiss',
+      effect: 'hearts',
+      palette: {
+        gradient: ['rgb(255,140,180)', 'rgb(255,190,220)', 'rgb(255,120,180)'],
+        glow: 'bg-rose-500/10',
+        iconGradient: 'from-rose-400 to-pink-500',
+      },
+    },
+    // {
+    //   id: 'goodmorning',
+    //   label: 'Good morning',
+    //   icon: HiSun,
+    //   text: 'Good morning sunshine ☀️',
+    //   effect: 'sparkles',
+    //   palette: {
+    //     gradient: ['rgb(255,220,120)', 'rgb(255,180,120)', 'rgb(255,140,120)'],
+    //     glow: 'bg-yellow-500/10',
+    //     iconGradient: 'from-yellow-400 to-orange-500',
+    //   },
+    // },
+    // {
+    //   id: 'goodnight',
+    //   label: 'Good night',
+    //   icon: HiMoon,
+    //   text: 'Good night, sleep well 🌙',
+    //   effect: 'stars',
+    //   palette: {
+    //     gradient: ['rgb(100,120,255)', 'rgb(160,180,255)', 'rgb(220,180,255)'],
+    //     glow: 'bg-indigo-500/10',
+    //     iconGradient: 'from-indigo-400 to-purple-500',
+    //   },
+    // },
+    {
+      id: 'thanks',
+      label: 'Thank you',
+      icon: HiHandThumbUp,
+      text: 'Thank you for being you',
+      effect: 'hearts',
+      palette: {
+        gradient: ['rgb(120,220,180)', 'rgb(170,255,220)', 'rgb(120,220,255)'],
+        glow: 'bg-emerald-500/10',
+        iconGradient: 'from-emerald-400 to-teal-500',
       },
     },
   ],
@@ -205,8 +266,28 @@ export const VIBES: {
   icon: IconType;
   blurb: string;
 }[] = [
-  { id: 'classic', label: 'Classic', icon: HiChatBubbleLeftRight, blurb: 'Just great messaging' },
-  { id: 'couple', label: 'Couple', icon: HiHeart, blurb: 'Hearts, love notes & confetti' },
-  { id: 'friends', label: 'Friends', icon: HiFire, blurb: 'Hype, fire & celebrations' },
-  { id: 'professional', label: 'Professional', icon: HiBriefcase, blurb: 'Calm, focused quick replies' },
+  {
+    id: 'classic',
+    label: 'Classic',
+    icon: HiChatBubbleLeftRight,
+    blurb: 'Just great messaging',
+  },
+  {
+    id: 'couple',
+    label: 'Couple',
+    icon: HiHeart,
+    blurb: 'Hearts, love notes & confetti',
+  },
+  {
+    id: 'friends',
+    label: 'Friends',
+    icon: HiFire,
+    blurb: 'Hype, fire & celebrations',
+  },
+  {
+    id: 'professional',
+    label: 'Professional',
+    icon: HiBriefcase,
+    blurb: 'Calm, focused quick replies',
+  },
 ];

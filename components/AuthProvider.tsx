@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -6,16 +6,16 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react";
-import { supabase } from "@/lib/supabase";
-import { idb } from "@/lib/idb";
-import { wireOutbox } from "@/lib/outbox";
-import { getPrivateKey } from "@/lib/keys";
-import { signOut } from "@/lib/auth";
-import { useInactivityLogout } from "@/lib/useInactivityLogout";
-import type { Profile } from "@/lib/types";
-import { AuthGate } from "./AuthGate";
-import { Spinner } from "@/components/ui/spinner";
+} from 'react';
+import { supabase } from '@/lib/supabase';
+import { idb } from '@/lib/idb';
+import { wireOutbox } from '@/lib/outbox';
+import { getPrivateKey } from '@/lib/keys';
+import { signOut } from '@/lib/auth';
+import { useInactivityLogout } from '@/lib/useInactivityLogout';
+import type { Profile } from '@/lib/types';
+import { AuthGate } from './AuthGate';
+import { Spinner } from '@/components/ui/spinner';
 
 type AuthContextValue = {
   userId: string;
@@ -28,13 +28,13 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
   return ctx;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [phase, setPhase] = useState<"loading" | "gate" | "ready">("loading");
+  const [phase, setPhase] = useState<'loading' | 'gate' | 'ready'>('loading');
 
   useEffect(() => {
     let cancelled = false;
@@ -45,14 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        if (!cancelled) setPhase("gate");
+        if (!cancelled) setPhase('gate');
         return;
       }
 
       // A session without the local private key can't decrypt anything —
       // the password (→ encKey) is needed to restore the backup, so re-auth.
       const [localProfile, privateKey] = await Promise.all([
-        idb.kvGet<Profile>("profile"),
+        idb.kvGet<Profile>('profile'),
         getPrivateKey(),
       ]);
       if (cancelled) return;
@@ -60,10 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (localProfile && localProfile.id === session.user.id && privateKey) {
         await supabase.realtime.setAuth();
         setProfile(localProfile);
-        setPhase("ready");
+        setPhase('ready');
       } else {
         await supabase.auth.signOut();
-        setPhase("gate");
+        setPhase('gate');
       }
     }
 
@@ -73,11 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // This app no longer ships a service worker. Tear down any SW (and its
     // caches) left installed from a previous build, otherwise it keeps serving
     // stale /_next chunks on devices that visited the old PWA.
-    if ("serviceWorker" in navigator) {
+    if ('serviceWorker' in navigator) {
       void navigator.serviceWorker
         .getRegistrations()
         .then((regs) => regs.forEach((r) => void r.unregister()));
-      if ("caches" in window) {
+      if ('caches' in window) {
         void caches
           .keys()
           .then((keys) => keys.forEach((k) => void caches.delete(k)));
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleReady = useCallback((p: Profile) => {
     setProfile(p);
-    setPhase("ready");
+    setPhase('ready');
   }, []);
 
   const logout = useCallback(async () => {
@@ -99,18 +99,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Auto sign-out after 5 minutes of inactivity (only once signed in).
-  useInactivityLogout(phase === "ready", () => void signOut());
+  // useInactivityLogout(phase === "ready", () => void signOut());
 
   const updateProfile = useCallback((patch: Partial<Profile>) => {
     setProfile((cur) => {
       if (!cur) return cur;
       const next = { ...cur, ...patch };
-      void idb.kvSet("profile", next);
+      void idb.kvSet('profile', next);
       return next;
     });
   }, []);
 
-  if (phase === "loading") {
+  if (phase === 'loading') {
     return (
       <div className="flex h-dvh items-center justify-center bg-background">
         <Spinner className="size-6 text-muted-foreground" />
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (phase === "gate") {
+  if (phase === 'gate') {
     return <AuthGate onReady={handleReady} />;
   }
 

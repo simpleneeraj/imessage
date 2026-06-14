@@ -6,7 +6,6 @@ import {
   IoArrowUp,
   IoCloseCircle,
   IoDocumentOutline,
-  IoImagesOutline,
   IoMic,
   IoMicOutline,
 } from 'react-icons/io5';
@@ -16,9 +15,11 @@ import { iosMenu, iosMenuItem } from '@/components/ui/ios-menu';
 import { useOnline } from '@/lib/useOnline';
 import { useDictation } from '@/lib/useDictation';
 import { MAX_FILE_BYTES, formatBytes } from '@/lib/attachments';
-import { EXPRESSIONS, type Expression } from '@/lib/expressions';
+import { EXPRESSIONS, paletteById, type Expression } from '@/lib/expressions';
 import type { Message, VibeId } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
+import { IoIosDocument, IoIosHeart, IoIosImages } from 'react-icons/io';
 
 type Staged = { file: File; viewOnce: boolean; previewUrl: string | null };
 
@@ -33,7 +34,7 @@ export function Composer({
   onCancelReply,
   vibe = 'classic',
   onExpression,
-  placeholder = 'iMessage',
+  placeholder = 'Write a sweet message...',
 }: {
   onSend: (body: string) => void;
   onSendFile?: (file: File, viewOnce: boolean) => Promise<void>;
@@ -268,43 +269,7 @@ export function Composer({
           )}
         </AnimatePresence>
 
-        <div className="relative flex items-end gap-2.5">
-          {suggestions.length > 0 && (
-            <div
-              className={menu.card({
-                class: 'absolute bottom-full left-11 right-0 z-20 mb-2',
-              })}
-            >
-              <div className={menu.group()}>
-                {suggestions.map((e, i) => (
-                  <button
-                    key={e.id}
-                    type="button"
-                    onMouseEnter={() => setSugIndex(i)}
-                    onClick={() => pickSuggestion(e)}
-                    className={cn(
-                      'flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left',
-                      i === activeSug && 'bg-black/5 dark:bg-white/10',
-                    )}
-                  >
-                    <e.icon className="size-5.5 shrink-0 text-primary" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-medium">
-                        /{e.id}
-                        <span className="ml-2 text-[13px] font-normal text-muted-foreground">
-                          {e.label}
-                        </span>
-                      </span>
-                      <span className="block truncate text-[13px] text-muted-foreground">
-                        {e.text}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
+        <div className="relative flex items-end gap-2">
           <input
             ref={fileRef}
             type="file"
@@ -315,61 +280,52 @@ export function Composer({
               e.target.value = '';
             }}
           />
-          <Menu>
-            <MenuTrigger
-              aria-label="Add"
-              disabled={!online || !onSendFile}
-              title={online ? 'Add to message' : 'Attachments need a connection'}
-              className="mb-0.75 flex size-8.5 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-muted-foreground active:opacity-60 disabled:opacity-40"
-            >
-              <IoAdd className="size-5.5" />
-            </MenuTrigger>
-            <MenuPopup
-              align="start"
-              side="top"
-              sideOffset={8}
-              className={menu.popup()}
-            >
-              <div className={menu.card({ class: 'w-60' })}>
-                <div className={menu.group()}>
-                  <MenuItem
-                    onClick={() => pickFile('image/*,video/*')}
-                    className={iosMenuItem()}
-                  >
-                    Photo or Video
-                    <IoImagesOutline className="size-5.5 text-foreground" />
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => pickFile('')}
-                    className={iosMenuItem()}
-                  >
-                    Document
-                    <IoDocumentOutline className="size-5.5 text-foreground" />
-                  </MenuItem>
+          <div className="flex h-9 items-center justify-center">
+            <Menu>
+              <MenuTrigger
+                aria-label="Add"
+                disabled={!online || !onSendFile}
+                title={
+                  online ? 'Add to message' : 'Attachments need a connection'
+                }
+                render={
+                  <Button
+                    size={'icon'}
+                    className="backdrop-blur-lg rounded-full bg-muted text-muted-foreground disabled:opacity-40"
+                  />
+                }
+              >
+                <IoAdd className="size-5" />
+              </MenuTrigger>
+              <MenuPopup
+                align="start"
+                side="top"
+                sideOffset={8}
+                className={menu.popup()}
+              >
+                <div className={menu.card()}>
+                  <div className={menu.group()}>
+                    <MenuItem
+                      onClick={() => pickFile('image/*,video/*')}
+                      className={iosMenuItem()}
+                    >
+                      Photo or Video
+                      <IoIosImages className="size-5 text-foreground" />
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => pickFile('')}
+                      className={iosMenuItem()}
+                    >
+                      Document
+                      <IoIosDocument className="size-5 text-foreground" />
+                    </MenuItem>
+                  </div>
                 </div>
+              </MenuPopup>
+            </Menu>
+          </div>
 
-                {expressions.length > 0 && onExpression && (
-                  <>
-                    <div className={menu.separator()} />
-                    <div className={menu.group()}>
-                      {expressions.map((e) => (
-                        <MenuItem
-                          key={e.id}
-                          onClick={() => onExpression(e)}
-                          className={iosMenuItem()}
-                        >
-                          {e.label}
-                          <e.icon className="size-5.5 text-foreground" />
-                        </MenuItem>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </MenuPopup>
-          </Menu>
-
-          <div className="relative flex min-h-9 flex-1 items-center rounded-[18px] border border-ring/60 bg-(--chat-bg) backdrop-blur">
+          <div className="relative flex min-h-9 flex-1 items-center rounded-2xl border border-ring/60 bg-(--chat-bg) backdrop-blur">
             <textarea
               ref={textareaRef}
               value={value}
@@ -457,10 +413,70 @@ export function Composer({
                   exit={{ opacity: 0 }}
                   className="absolute bottom-1.5 right-2.5 cursor-pointer text-muted-foreground active:opacity-60"
                 >
-                  <IoMicOutline className="size-5.5" />
+                  <IoMicOutline className="size-5" />
                 </motion.button>
               )}
             </AnimatePresence>
+          </div>
+
+          <div className="flex h-9 items-center justify-center">
+            <Menu>
+              <MenuTrigger
+                aria-label="Add"
+                disabled={!online || !onSendFile}
+                title={
+                  online ? 'Add to message' : 'Attachments need a connection'
+                }
+                render={
+                  <Button
+                    size={'icon'}
+                    className="backdrop-blur-lg rounded-full bg-muted text-muted-foreground disabled:opacity-40"
+                  />
+                }
+              >
+                <IoIosHeart className="size-5 text-rose-500" />
+              </MenuTrigger>
+              <MenuPopup
+                align="end"
+                side="top"
+                sideOffset={8}
+                className={menu.popup()}
+              >
+                <div className={menu.card()}>
+                  <div className={menu.group()}>
+                    {expressions.map((e) => {
+                      const palette = paletteById(e.id);
+                      return (
+                        <MenuItem
+                          key={e.id}
+                          className={iosMenuItem()}
+                          onClick={() => onExpression?.(e)}
+                        >
+                          <span>{e.label}</span>
+                          <div className="relative flex shrink-0 items-center justify-center ">
+                            {/* Glow */}
+                            <div
+                              className={cn(
+                                'absolute left-1/2 top-0 size-6 -translate-x-1/2 rounded-full bg-linear-to-r blur-xl',
+                                palette.iconGradient,
+                              )}
+                            />
+                            {/* Icon */}
+                            <div
+                              className={cn(
+                                'relative z-10 flex items-center justify-center rounded-full',
+                              )}
+                            >
+                              <e.icon className="size-5" />
+                            </div>
+                          </div>
+                        </MenuItem>
+                      );
+                    })}
+                  </div>
+                </div>
+              </MenuPopup>
+            </Menu>
           </div>
         </div>
       </div>
