@@ -95,7 +95,7 @@ export function AuthGate({
           </h1>
 
           {slug && (
-            <span className="mt-2 rounded-full bg-imsg-gray px-3 py-1 text-xs font-medium text-imsg-text-gray">
+            <span className="mt-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
               {slug}.{ROOT_HOST}
             </span>
           )}

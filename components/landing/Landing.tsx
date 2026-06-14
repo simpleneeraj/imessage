@@ -156,7 +156,7 @@ const TIERS = [
     name: 'Royal',
     price: '$4',
     cadence: 'per month',
-    blurb: 'The full Monarch experience.',
+    blurb: 'The full Festhub experience.',
     features: [
       'Everything in Courtier',
       'All themes, wallpapers & gradient bubbles',
@@ -170,7 +170,7 @@ const TIERS = [
     highlight: true,
   },
   {
-    name: 'Monarch',
+    name: 'Festhub',
     price: '$49',
     cadence: 'once, forever',
     blurb: 'Lifetime crown. Every feature, every future feature.',
@@ -190,7 +190,12 @@ const TIERS = [
 
 function Crown({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
       <path d="M3 18.5 1.8 8.6c-.06-.5.52-.83.9-.5L7 11.5l4.2-6.3c.38-.57 1.22-.57 1.6 0L17 11.5l4.3-3.4c.38-.33.96 0 .9.5L21 18.5c-.07.57-.55 1-1.12 1H4.12c-.57 0-1.05-.43-1.12-1Z" />
     </svg>
   );
@@ -244,7 +249,7 @@ function SectionHeading({
 
 function PhoneMockup() {
   const bubbles = [
-    { mine: false, text: 'have you tried Monarch yet?? 👀' },
+    { mine: false, text: 'have you tried Festhub yet?? 👀' },
     { mine: true, text: 'just installed it. these bubbles are gorgeous' },
     { mine: false, text: 'right?! and it’s actually end-to-end encrypted' },
     { mine: true, text: 'love you for this ❤️', expression: true },
@@ -371,7 +376,7 @@ export function Landing() {
         <nav className="mx-auto flex h-16 w-full max-w-6xl items-center gap-8 px-5">
           <Link href="/" className="flex items-center gap-2">
             <Crown className="size-6 text-amber-400" />
-            <span className="text-lg font-bold tracking-tight">Monarch</span>
+            <span className="text-lg font-bold tracking-tight">Festhub</span>
           </Link>
           <div className="hidden items-center gap-7 text-sm text-white/60 md:flex">
             <a href="#features" className="transition-colors hover:text-white">
@@ -429,7 +434,7 @@ export function Landing() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mx-auto mt-6 max-w-xl text-pretty text-lg text-white/55 lg:mx-0"
             >
-              Monarch is a beautifully crafted messenger with the polish of
+              Festhub is a beautifully crafted messenger with the polish of
               iMessage and privacy it never had. Realtime, offline-first,
               endlessly themeable — your messages, your keys, your kingdom.
             </motion.p>
@@ -507,7 +512,7 @@ export function Landing() {
         <SectionHeading
           kicker="The royal roadmap"
           title="Coming to the kingdom"
-          sub="Shipping next — Royal and Monarch members get them the day they land."
+          sub="Shipping next — Royal and Festhub members get them the day they land."
         />
         <div className="mx-auto mt-14 grid w-full max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {ROADMAP.map((f, i) => (
@@ -553,7 +558,7 @@ export function Landing() {
                   </span>
                 )}
                 <span className="flex items-center gap-2">
-                  {t.name === 'Monarch' && (
+                  {t.name === 'Festhub' && (
                     <Crown className="size-4.5 text-amber-400" />
                   )}
                   <h3 className="text-[17px] font-semibold">{t.name}</h3>
@@ -627,7 +632,7 @@ export function Landing() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 text-[13px] text-white/40 sm:flex-row">
           <span className="flex items-center gap-2">
             <Crown className="size-4 text-amber-400/80" />
-            <span className="font-semibold text-white/70">Monarch</span> — rule
+            <span className="font-semibold text-white/70">Festhub</span> — rule
             your conversations.
           </span>
           <div className="flex items-center gap-6">
@@ -641,7 +646,7 @@ export function Landing() {
               Open App
             </Link>
           </div>
-          <span>© 2026 Monarch. All rights reserved.</span>
+          <span>© 2026 Festhub. All rights reserved.</span>
         </div>
       </footer>
     </div>

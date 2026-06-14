@@ -37,11 +37,11 @@ export function ReactionBadges({
               transition={{ type: 'spring', stiffness: 500, damping: 25 }}
               style={{ zIndex: 3 - i }}
               className={cn(
-                'flex size-7 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-2 ring-(--imsg-chat-bg)',
+                'flex size-7 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-2 ring-(--chat-bg)',
                 i > 0 && (mine ? '-ml-2.5' : '-mr-2.5'),
                 isMine
-                  ? 'bg-imsg-blue text-white'
-                  : 'bg-imsg-gray text-imsg-text-gray dark:bg-[#2c2c2e]',
+                  ? 'bg-primary text-white'
+                  : 'bg-muted text-muted-foreground',
               )}
             >
               <TapbackGlyph

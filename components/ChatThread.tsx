@@ -59,7 +59,6 @@ function useConversation(id: string, me: string): Conversation | null {
             data as ConversationRow;
           const fresh = {
             ...conv,
-            // nicknames override display everywhere inside the chat
             participants: conversation_participants.map((p) => ({
               ...p.profiles,
               nickname: p.nickname,
@@ -74,8 +73,6 @@ function useConversation(id: string, me: string): Conversation | null {
         });
     load();
 
-    // vanish/vibe/wallpaper arrive as conversation UPDATEs; membership and
-    // nickname changes arrive as audit-event INSERTs → refetch participants.
     const channel = supabase
       .channel(`conv-meta:${id}`)
       .on(
@@ -113,17 +110,12 @@ function useConversation(id: string, me: string): Conversation | null {
   return conversation;
 }
 
-// Outer gate: while a passcode lock is active, the message UI is NEVER
-// mounted — no fetch, no decrypt, no composer — so stripping the lock screen
-// from the DOM reveals nothing and can't send messages.
 export function ChatThread({
   id,
   initialPasscodeHash = null,
   initialTitle = '',
 }: {
   id: string;
-  // Resolved server-side so a locked chat renders the LockScreen on first
-  // paint; the client lookup below reconciles once the conversation loads.
   initialPasscodeHash?: string | null;
   initialTitle?: string;
 }) {
@@ -131,7 +123,6 @@ export function ChatThread({
   const conversation = useConversation(id, userId);
 
   const [unlocked, setUnlocked] = useState(false);
-  // local override so set/remove in this session applies without a refetch
   const [hashOverride, setHashOverride] = useState<string | null | undefined>(
     undefined,
   );
@@ -152,7 +143,7 @@ export function ChatThread({
 
   if (locked && myPasscodeHash) {
     return (
-      <div className="relative flex h-full min-h-0 flex-col bg-(--imsg-chat-bg)">
+      <div className="relative flex h-full min-h-0 flex-col bg-background">
         <LockScreen
           conversationId={id}
           passcodeHash={myPasscodeHash}
@@ -171,7 +162,7 @@ export function ChatThread({
       myPasscodeHash={myPasscodeHash}
       onPasscodeChange={(hash) => {
         setHashOverride(hash);
-        setUnlocked(true); // setting a code mustn't lock you out mid-session
+        setUnlocked(true);
       }}
     />
   );
@@ -226,7 +217,6 @@ function ChatThreadInner({
 
   const [passcodeOpen, setPasscodeOpen] = useState(false);
 
-  // Celebrations: new expression messages fire a full-screen effect.
   const vibe = conversation?.vibe ?? 'classic';
   const [celebration, setCelebration] = useState<{
     kind: 'hearts' | 'confetti';
@@ -237,7 +227,6 @@ function ChatThreadInner({
   useEffect(() => {
     if (messages.length === 0) return;
     if (!primedRef.current) {
-      // don't celebrate history on first load
       for (const m of messages) seenRef.current.add(m.client_id);
       primedRef.current = true;
       return;
@@ -261,8 +250,6 @@ function ChatThreadInner({
     return () => clearTimeout(t);
   }, [celebration]);
 
-  // Read receipts: mark on open, on refocus, and when new messages arrive
-  // while the thread is visible. (Locked chats never mount this component.)
   useEffect(() => {
     if (document.visibilityState === 'visible') markRead();
     const onVisible = () => {
@@ -272,14 +259,11 @@ function ChatThreadInner({
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [markRead, messages.length]);
 
-  // Vanish mode: when the chat is closed (or the mode is turned off),
-  // ephemeral messages that everyone has read are destroyed for everyone.
   const vanish = conversation?.vanish_mode ?? false;
   useEffect(() => {
     if (!vanish) return;
     const sweep = () => {
       if (navigator.onLine) {
-        // .then() matters: supabase builders only execute when awaited
         void supabase.rpc('delete_vanished', { conv: id }).then(() => {});
       }
     };
@@ -290,7 +274,6 @@ function ChatThreadInner({
     };
   }, [vanish, id]);
 
-  // Header action-menu state + handlers (moved out of ChatDetails).
   const isAdmin = conversation?.created_by === userId;
   const deleted = Boolean(conversation?.deleted_at);
 
@@ -323,16 +306,14 @@ function ChatThreadInner({
   return (
     <div
       className={cn(
-        'relative flex h-full min-h-0 flex-col bg-(--imsg-chat-bg) transition-colors duration-300',
+        'relative flex h-full min-h-0 flex-col bg-(--chat-bg) transition-colors duration-300',
         vanish && 'vanish',
         wallpaperOptions && 'has-wallpaper',
       )}
-      // themed outgoing-bubble fill (solid or gradient); vanish keeps its own palette
       style={
         !vanish && bubbleColor
           ? ({
-              '--imsg-bubble-out': bubbleSolid(bubbleColor),
-              '--imsg-bubble-out-bg': bubbleColor,
+              '--bubble-bg': bubbleColor,
             } as React.CSSProperties)
           : undefined
       }
@@ -343,11 +324,9 @@ function ChatThreadInner({
             options={wallpaperOptions}
             className="pointer-events-none absolute inset-0 z-0 h-full w-full"
           />
-          {/* Scrim: dims the busy pattern so bubbles stay readable. */}
           <div className="pointer-events-none absolute inset-0 z-0 bg-white/45 dark:bg-black/55" />
         </>
       )}
-      {/* Foreground above the wallpaper layer. */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <ChatHeader
           title={title}
@@ -372,10 +351,9 @@ function ChatThreadInner({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              // gradient derived from the chat accent so it tracks the theme
               style={{
                 background:
-                  'linear-gradient(to right, color-mix(in oklab, var(--imsg-bubble-out) 45%, #000), var(--imsg-bubble-out), color-mix(in oklab, var(--imsg-bubble-out) 45%, #000))',
+                  'linear-gradient(to right, color-mix(in oklab, var(--bubble-bg) 45%, #000), var(--bubble-bg), color-mix(in oklab, var(--bubble-bg) 45%, #000))',
               }}
               className="shrink-0 overflow-hidden text-center"
             >
@@ -452,7 +430,6 @@ function ChatThreadInner({
         onOpenChange={setThemeOpen}
         conversation={conversation}
         onWallpaper={(theme) => {
-          // the conversations UPDATE event syncs the new theme to all members
           void supabase
             .rpc('set_wallpaper', { conv: id, theme })
             .then(() => {});

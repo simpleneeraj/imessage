@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (phase === "loading") {
     return (
       <div className="flex h-dvh items-center justify-center bg-background">
-        <Spinner className="size-6 text-imsg-text-gray" />
+        <Spinner className="size-6 text-muted-foreground" />
       </div>
     );
   }

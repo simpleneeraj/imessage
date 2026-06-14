@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { CreateSpace } from '@/components/CreateSpace';
 
 export const metadata: Metadata = {
-  title: 'Create your space — Monarch',
+  title: 'Create your space — Festhub',
   description:
     'Spin up a private, end-to-end encrypted space for two on its own subdomain.',
 };

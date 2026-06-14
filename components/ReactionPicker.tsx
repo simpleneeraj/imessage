@@ -106,8 +106,8 @@ export function ReactionPicker({
                 className={cn(
                   'flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors',
                   myReaction === kind
-                    ? 'bg-imsg-blue text-white'
-                    : 'text-imsg-text-gray hover:text-foreground',
+                    ? 'bg-primary text-white'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 <TapbackGlyph value={kind} className="size-5 text-current" />

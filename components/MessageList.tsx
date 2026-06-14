@@ -50,20 +50,20 @@ function EditSheet({
           rows={3}
           autoFocus
           maxLength={4000}
-          className="w-full resize-none rounded-[12px] border border-imsg-chevron/60 bg-transparent px-3 py-2 text-[17px] outline-none"
+          className="w-full resize-none rounded-[12px] border border-ring/60 bg-transparent px-3 py-2 text-[17px] outline-none"
         />
         <div className="mt-3 flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full px-4 py-2 text-[15px] text-imsg-blue active:opacity-60"
+            className="rounded-full px-4 py-2 text-[15px] text-primary active:opacity-60"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => value.trim() && onSave(value)}
-            className="rounded-full bg-imsg-blue px-4 py-2 text-[15px] font-semibold text-white active:opacity-70"
+            className="rounded-full bg-primary px-4 py-2 text-[15px] font-semibold text-white active:opacity-70"
           >
             Save
           </button>

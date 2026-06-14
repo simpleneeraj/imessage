@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
 
-// iOS-style passcode gate rendered over a locked chat.
 export function LockScreen({
   conversationId,
   passcodeHash,
@@ -46,18 +45,17 @@ export function LockScreen({
   }
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-8 bg-(--imsg-chat-bg)/80 px-6 backdrop-blur-2xl">
+    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-8 bg-background/80 px-6 backdrop-blur-2xl">
       <div className="flex flex-col items-center gap-3">
-        <span className="flex size-14 items-center justify-center rounded-full bg-imsg-gray">
-          <IoLockClosed className="size-7 text-imsg-text-gray" />
+        <span className="flex size-14 items-center justify-center rounded-full bg-muted">
+          <IoLockClosed className="size-7 text-muted-foreground" />
         </span>
         <p className="text-[17px] font-semibold">{title} is locked</p>
-        <p className="text-[13px] text-imsg-text-gray">
+        <p className="text-[13px] text-muted-foreground">
           Enter your 4-digit passcode
         </p>
       </div>
 
-      {/* entry dots */}
       <motion.div
         key={shake}
         animate={shake ? { x: [0, -12, 12, -8, 8, 0] } : false}
@@ -68,14 +66,13 @@ export function LockScreen({
           <span
             key={i}
             className={cn(
-              'size-3.5 rounded-full border border-imsg-text-gray transition-colors',
+              'size-3.5 rounded-full border border-muted-foreground transition-colors',
               entry.length > i && 'bg-foreground border-foreground',
             )}
           />
         ))}
       </motion.div>
 
-      {/* keypad */}
       <div className="grid grid-cols-3 gap-4">
         {KEYS.map((key, i) =>
           key === '' ? (
@@ -86,7 +83,7 @@ export function LockScreen({
               type="button"
               aria-label={key === 'del' ? 'Delete' : key}
               onClick={() => void press(key)}
-              className="flex size-17 cursor-pointer items-center justify-center rounded-full bg-imsg-gray/70 text-[26px] font-light active:bg-imsg-gray"
+              className="flex size-17 cursor-pointer items-center justify-center rounded-full bg-muted/70 text-[26px] font-light active:bg-muted"
             >
               {key === 'del' ? (
                 <IoBackspaceOutline className="size-6.5" />

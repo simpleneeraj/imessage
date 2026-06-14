@@ -1,4 +1,4 @@
--- Monarch features: chat vibes, per-chat nicknames, passcode lock.
+-- Festhub features: chat vibes, per-chat nicknames, passcode lock.
 
 -- Vibe: per-conversation personality (drives expressions + reaction sets).
 alter table public.conversations

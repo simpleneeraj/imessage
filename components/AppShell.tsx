@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     >
       <aside
         className={cn(
-          'w-full flex-col md:flex md:w-95 md:shrink-0 md:border-r md:border-imsg-separator/50',
+          'w-full flex-col md:flex md:w-95 md:shrink-0 md:border-r md:border-border/50',
           inDetail ? 'hidden' : 'flex',
         )}
       >

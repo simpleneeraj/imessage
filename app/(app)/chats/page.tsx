@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <div className="hidden h-full flex-col items-center justify-center gap-2 text-center md:flex">
       <p className="text-[22px] font-bold">No Conversation Selected</p>
-      <p className="text-[15px] text-imsg-text-gray">
+      <p className="text-[15px] text-muted-foreground">
         Choose a conversation from the list, or start a new one.
       </p>
     </div>

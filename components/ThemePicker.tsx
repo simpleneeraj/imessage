@@ -57,8 +57,8 @@ function ThemeCard({
       aria-pressed={selected}
       className={cn(
         'relative aspect-3/4 w-28 shrink-0 snap-start cursor-pointer overflow-hidden rounded-2xl ring-offset-2 ring-offset-background transition-shadow active:opacity-80',
-        selected ? 'ring-2 ring-imsg-blue' : 'ring-1 ring-border',
-        !theme && 'bg-(--imsg-chat-bg)',
+        selected ? 'ring-2 ring-primary' : 'ring-1 ring-border',
+        !theme && 'bg-(--chat-bg)',
       )}
       style={theme ? { backgroundImage: gradientFor(theme.color) } : undefined}
     >
@@ -81,7 +81,7 @@ function ThemeCard({
           />
         </span>
       ) : (
-        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-imsg-text-gray">
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground">
           <IoBanOutline className="size-6" />
           <span className="text-[12px] font-medium">None</span>
         </span>
@@ -89,13 +89,13 @@ function ThemeCard({
       <span
         className={cn(
           'absolute inset-x-0 bottom-0 pb-1.5 text-center text-[11px] font-semibold',
-          theme ? 'text-black/60' : 'text-imsg-text-gray',
+          theme ? 'text-black/60' : 'text-muted-foreground',
         )}
       >
         {theme?.name ?? ''}
       </span>
       {selected && (
-        <IoCheckmarkCircle className="absolute right-1.5 top-1.5 size-5 text-imsg-blue drop-shadow" />
+        <IoCheckmarkCircle className="absolute right-1.5 top-1.5 size-5 text-primary drop-shadow" />
       )}
     </button>
   );
@@ -179,15 +179,15 @@ export function ThemePicker({
             </h3>
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Match-theme: clears the override so the bubble follows the
-                  active palette accent (--imsg-bubble-out via bg-imsg-blue). */}
+                  active palette accent (--bubble-bg via bg-primary). */}
               <button
                 type="button"
                 title="Match theme"
                 aria-label="Match theme color"
                 onClick={() => apply({ ...wp, bubble: undefined })}
                 className={cn(
-                  'flex size-9 cursor-pointer items-center justify-center rounded-full bg-imsg-blue text-white ring-offset-2 ring-offset-background active:opacity-80',
-                  !wp?.bubble && 'ring-2 ring-imsg-blue',
+                  'flex size-9 cursor-pointer items-center justify-center rounded-full bg-primary text-white ring-offset-2 ring-offset-background active:opacity-80',
+                  !wp?.bubble && 'ring-2 ring-primary',
                 )}
               >
                 <IoColorWandOutline className="size-4.5" />
@@ -201,7 +201,7 @@ export function ThemePicker({
                   onClick={() => apply({ ...wp, bubble: c.value })}
                   className={cn(
                     'flex size-9 cursor-pointer items-center justify-center rounded-full ring-offset-2 ring-offset-background active:opacity-80',
-                    wp?.bubble === c.value && 'ring-2 ring-imsg-blue',
+                    wp?.bubble === c.value && 'ring-2 ring-primary',
                   )}
                   style={{ background: c.value }}
                 >
@@ -264,7 +264,7 @@ export function ThemePicker({
                     className={cn(
                       'cursor-pointer rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-default',
                       vibe === v.id
-                        ? 'border-imsg-blue bg-imsg-blue/5'
+                        ? 'border-primary bg-primary/5'
                         : 'border-border',
                     )}
                   >
@@ -273,19 +273,19 @@ export function ThemePicker({
                         className={cn(
                           'size-4.5',
                           vibe === v.id
-                            ? 'text-imsg-blue'
-                            : 'text-imsg-text-gray',
+                            ? 'text-primary'
+                            : 'text-muted-foreground',
                         )}
                       />
                       {v.label}
                       {loading ? (
                         <span
                           aria-label="Applying"
-                          className="ml-auto size-4 animate-spin rounded-full border-2 border-imsg-blue border-t-transparent"
+                          className="ml-auto size-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
                         />
                       ) : (
                         vibe === v.id && (
-                          <IoCheckmark className="ml-auto size-4.5 text-imsg-blue" />
+                          <IoCheckmark className="ml-auto size-4.5 text-primary" />
                         )
                       )}
                     </span>
@@ -303,7 +303,7 @@ export function ThemePicker({
                         <TapbackGlyph
                           key={t}
                           value={t}
-                          className="size-3.5 text-imsg-text-gray"
+                          className="size-3.5 text-muted-foreground"
                         />
                       ))}
                     </span>
@@ -331,7 +331,7 @@ export function ThemePicker({
                           <TapbackGlyph
                             key={t}
                             value={t}
-                            className="size-4 text-imsg-text-gray"
+                            className="size-4 text-muted-foreground"
                           />
                         ))}
                       </span>
@@ -351,7 +351,7 @@ export function ThemePicker({
                           <TapbackGlyph
                             key={t}
                             value={t}
-                            className="size-4 text-imsg-text-gray"
+                            className="size-4 text-muted-foreground"
                           />
                         ))}
                       </span>

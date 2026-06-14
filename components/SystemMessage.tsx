@@ -43,7 +43,7 @@ export function systemEventText(
 export function SystemMessage({ text }: { text: string }) {
   return (
     <div className="flex justify-center py-2">
-      <span className="rounded-full bg-imsg-gray/70 px-3 py-1 text-center text-[12px] text-imsg-text-gray backdrop-blur">
+      <span className="rounded-full bg-muted/70 px-3 py-1 text-center text-[12px] text-muted-foreground backdrop-blur">
         {text}
       </span>
     </div>

@@ -32,7 +32,7 @@ export function Receipt({
   return (
     <p
       data-testid="receipt"
-      className="mt-0.5 pr-1 text-right text-[10px] text-imsg-text-gray"
+      className="mt-0.5 pr-1 text-right text-[10px] text-muted-foreground"
     >
       {readByAll ? (
         <>

@@ -24,8 +24,6 @@ type Staged = { file: File; viewOnce: boolean; previewUrl: string | null };
 
 const menu = iosMenu();
 
-// iMessage input bar: "+" attach button, pill field with "iMessage"
-// placeholder, mic icon swapping to the blue ↑ send button when typing.
 export function Composer({
   onSend,
   onSendFile,
@@ -58,8 +56,6 @@ export function Composer({
   const online = useOnline();
   const canSend = value.trim().length > 0 || (staged !== null && !uploading);
 
-  // Dictation: speech lands in the input live; finalized + interim text is
-  // appended to whatever was typed before the mic started.
   const dictBase = useRef('');
   const { listening, start, stop } = useDictation((finalText, interim) => {
     setValue(dictBase.current + finalText + interim);
@@ -86,7 +82,6 @@ export function Composer({
     el.click();
   }
 
-  // "/" autocomplete: typing "/lo" filters the vibe's expression presets.
   const slash = /^\/(\w*)$/.exec(value);
   const suggestions =
     slash && onExpression
@@ -113,7 +108,6 @@ export function Composer({
     [staged],
   );
 
-  // Jump straight into the input when a reply target is set (e.g. swipe-to-reply).
   useEffect(() => {
     if (replyingTo) textareaRef.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- focus once per distinct reply target
@@ -132,9 +126,6 @@ export function Composer({
       setError(`Files up to ${formatBytes(MAX_FILE_BYTES)} are supported.`);
       return;
     }
-    // Read the bytes NOW, while the picked-file reference is still valid, and
-    // keep an in-memory copy. On iOS the original File handle can go stale by
-    // the time we encrypt/upload (NotReadableError), so we never read it twice.
     let stable: File;
     try {
       const bytes = await file.arrayBuffer();
@@ -184,7 +175,7 @@ export function Composer({
   }
 
   return (
-    <div className="shrink-0 bg-(--imsg-chat-bg) px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5">
+    <div className="shrink-0 bg-(--chat-bg) px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5">
       <div className="mx-auto w-full max-w-2xl">
         {error && (
           <p className="px-1 pb-1 text-[12px] text-destructive">{error}</p>
@@ -196,13 +187,13 @@ export function Composer({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="mb-2 flex items-center gap-2 rounded-[14px] border-l-[3px] border-imsg-blue bg-imsg-gray/60 px-3 py-2 backdrop-blur-xs"
+              className="mb-2 flex items-center gap-2 rounded-[14px] border-l-[3px] border-primary bg-muted/60 px-3 py-2 backdrop-blur-xs"
             >
               <span className="min-w-0 flex-1">
-                <span className="block text-[12px] font-semibold text-imsg-blue">
+                <span className="block text-[12px] font-semibold text-primary">
                   Replying to {replyName}
                 </span>
-                <span className="block truncate text-[13px] text-imsg-text-gray">
+                <span className="block truncate text-[13px] text-muted-foreground">
                   {replyingTo.payload?.kind === 'file'
                     ? 'Attachment'
                     : (replyingTo.text ?? 'Message')}
@@ -212,7 +203,7 @@ export function Composer({
                 type="button"
                 aria-label="Cancel reply"
                 onClick={onCancelReply}
-                className="shrink-0 text-imsg-text-gray active:opacity-60"
+                className="shrink-0 text-muted-foreground active:opacity-60"
               >
                 <IoCloseCircle className="size-6" />
               </button>
@@ -226,7 +217,7 @@ export function Composer({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="mb-2 flex items-center gap-3 rounded-[14px] bg-imsg-gray/60 p-2"
+              className="mb-2 flex items-center gap-3 rounded-[14px] bg-muted/60 p-2"
             >
               {staged.previewUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
@@ -237,14 +228,14 @@ export function Composer({
                 />
               ) : (
                 <span className="flex size-14 items-center justify-center rounded-[10px] bg-black/5 dark:bg-white/10">
-                  <IoDocumentOutline className="size-6 text-imsg-text-gray" />
+                  <IoDocumentOutline className="size-6 text-muted-foreground" />
                 </span>
               )}
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-medium">
                   {staged.file.name}
                 </span>
-                <span className="block text-[12px] text-imsg-text-gray">
+                <span className="block text-[12px] text-muted-foreground">
                   {formatBytes(staged.file.size)}
                   {uploading && ' — encrypting & uploading…'}
                 </span>
@@ -258,8 +249,8 @@ export function Composer({
                 className={cn(
                   'flex size-8 shrink-0 items-center justify-center rounded-full border text-[13px] font-bold',
                   staged.viewOnce
-                    ? 'border-imsg-blue bg-imsg-blue text-white'
-                    : 'border-imsg-chevron text-imsg-text-gray',
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-ring text-muted-foreground',
                 )}
                 title="View once"
               >
@@ -269,7 +260,7 @@ export function Composer({
                 type="button"
                 aria-label="Remove attachment"
                 onClick={() => setStaged(null)}
-                className="shrink-0 text-imsg-text-gray active:opacity-60"
+                className="shrink-0 text-muted-foreground active:opacity-60"
               >
                 <IoCloseCircle className="size-6" />
               </button>
@@ -278,7 +269,6 @@ export function Composer({
         </AnimatePresence>
 
         <div className="relative flex items-end gap-2.5">
-          {/* "/" preset suggestions (frosted iOS card above the input) */}
           {suggestions.length > 0 && (
             <div
               className={menu.card({
@@ -297,15 +287,15 @@ export function Composer({
                       i === activeSug && 'bg-black/5 dark:bg-white/10',
                     )}
                   >
-                    <e.icon className="size-5.5 shrink-0 text-imsg-blue" />
+                    <e.icon className="size-5.5 shrink-0 text-primary" />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[15px] font-medium">
                         /{e.id}
-                        <span className="ml-2 text-[13px] font-normal text-imsg-text-gray">
+                        <span className="ml-2 text-[13px] font-normal text-muted-foreground">
                           {e.label}
                         </span>
                       </span>
-                      <span className="block truncate text-[13px] text-imsg-text-gray">
+                      <span className="block truncate text-[13px] text-muted-foreground">
                         {e.text}
                       </span>
                     </span>
@@ -325,13 +315,12 @@ export function Composer({
               e.target.value = '';
             }}
           />
-          {/* "+" feature menu (iOS frosted card) — new features slot in here */}
           <Menu>
             <MenuTrigger
               aria-label="Add"
               disabled={!online || !onSendFile}
               title={online ? 'Add to message' : 'Attachments need a connection'}
-              className="mb-0.75 flex size-8.5 shrink-0 cursor-pointer items-center justify-center rounded-full bg-imsg-gray text-imsg-text-gray active:opacity-60 disabled:opacity-40"
+              className="mb-0.75 flex size-8.5 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-muted-foreground active:opacity-60 disabled:opacity-40"
             >
               <IoAdd className="size-5.5" />
             </MenuTrigger>
@@ -359,7 +348,6 @@ export function Composer({
                   </MenuItem>
                 </div>
 
-                {/* vibe expressions — one tap, full-screen effect on both sides */}
                 {expressions.length > 0 && onExpression && (
                   <>
                     <div className={menu.separator()} />
@@ -381,7 +369,7 @@ export function Composer({
             </MenuPopup>
           </Menu>
 
-          <div className="relative flex min-h-9 flex-1 items-center rounded-[18px] border border-imsg-chevron/60 bg-(--imsg-chat-bg) backdrop-blur">
+          <div className="relative flex min-h-9 flex-1 items-center rounded-[18px] border border-ring/60 bg-(--chat-bg) backdrop-blur">
             <textarea
               ref={textareaRef}
               value={value}
@@ -423,13 +411,11 @@ export function Composer({
               placeholder={placeholder}
               enterKeyHint="send"
               maxLength={4000}
-              className="max-h-30 flex-1 resize-none bg-transparent py-1.5 pl-3.5 pr-9 text-[17px] leading-5.5 outline-none placeholder:text-imsg-text-gray"
+              className="max-h-30 flex-1 resize-none bg-transparent py-1.5 pl-3.5 pr-9 text-[17px] leading-5.5 outline-none placeholder:text-muted-foreground"
             />
 
             <AnimatePresence initial={false} mode="popLayout">
               {listening ? (
-                // dictating: red pulsing mic, tap to stop — stays visible even
-                // while speech fills the input
                 <motion.button
                   key="listening"
                   type="button"
@@ -456,7 +442,7 @@ export function Composer({
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.5, opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 600, damping: 30 }}
-                  className="absolute bottom-0.75 right-0.75 flex size-7.25 cursor-pointer items-center justify-center rounded-full bg-imsg-blue text-white active:opacity-70"
+                  className="absolute bottom-0.75 right-0.75 flex size-7.25 cursor-pointer items-center justify-center rounded-full bg-primary text-white active:opacity-70"
                 >
                   <IoArrowUp className="size-4.5" />
                 </motion.button>
@@ -469,7 +455,7 @@ export function Composer({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute bottom-1.5 right-2.5 cursor-pointer text-imsg-text-gray active:opacity-60"
+                  className="absolute bottom-1.5 right-2.5 cursor-pointer text-muted-foreground active:opacity-60"
                 >
                   <IoMicOutline className="size-5.5" />
                 </motion.button>

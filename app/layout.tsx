@@ -1,15 +1,9 @@
-import type { Metadata, Viewport } from 'next';
-import { ThemeProvider } from 'next-themes';
-import { THEMES, DEFAULT_THEME } from '@/lib/themes';
-import './globals.css';
-import { Inter, Geist_Mono } from 'next/font/google';
+import './styles/globals.css';
 import { cn } from '@/lib/utils';
-
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono' });
-
-const interHeading = Inter({ subsets: ['latin'], variable: '--font-heading' });
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+import { ThemeProvider } from 'next-themes';
+import type { Metadata, Viewport } from 'next';
+import { THEMES, DEFAULT_THEME } from '@/lib/themes';
+import fonts from './fonts';
 
 const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
@@ -18,12 +12,12 @@ const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Monarch — Private, End-to-End Encrypted Messenger',
-    template: '%s · Monarch',
+    default: 'Festhub — Private, End-to-End Encrypted Messenger',
+    template: '%s · Festhub',
   },
   description:
-    'Monarch is a beautifully crafted, end-to-end encrypted messenger. Tapback reactions, disappearing messages, encrypted photos and view-once media — your messages, your keys, on every device.',
-  applicationName: 'Monarch',
+    'Festhub is a beautifully crafted, end-to-end encrypted messenger. Tapback reactions, disappearing messages, encrypted photos and view-once media — your messages, your keys, on every device.',
+  applicationName: 'Festhub',
   keywords: [
     'encrypted messenger',
     'end-to-end encryption',
@@ -34,15 +28,17 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: 'website',
-    siteName: 'Monarch',
-    title: 'Monarch — Private, End-to-End Encrypted Messenger',
+    siteName: 'Festhub',
+    title: 'Festhub — Private, End-to-End Encrypted Messenger',
     description:
       'Beautifully crafted, end-to-end encrypted messaging. Your messages, your keys, on every device.',
-    images: [{ url: '/logo/android-chrome-512x512.png', width: 512, height: 512 }],
+    images: [
+      { url: '/logo/android-chrome-512x512.png', width: 512, height: 512 },
+    ],
   },
   twitter: {
     card: 'summary',
-    title: 'Monarch — Private, End-to-End Encrypted Messenger',
+    title: 'Festhub — Private, End-to-End Encrypted Messenger',
     description:
       'Beautifully crafted, end-to-end encrypted messaging. Your messages, your keys, on every device.',
     images: ['/logo/android-chrome-512x512.png'],
@@ -50,7 +46,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Monarch',
+    title: 'Festhub',
   },
   icons: {
     icon: [
@@ -84,13 +80,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(
-        'h-full antialiased',
-        'font-sans',
-        inter.variable,
-        interHeading.variable,
-        geistMono.variable,
-      )}
+      className={cn('h-full antialiased', fonts)}
       suppressHydrationWarning
     >
       <body className="h-full bg-background text-foreground">

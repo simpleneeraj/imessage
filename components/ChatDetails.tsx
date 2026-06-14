@@ -132,7 +132,7 @@ export function ChatDetails({
       <DrawerPopup
         variant="inset"
         showBar={!isDesktop}
-        className={cn('flex flex-col', isDesktop ? 'h-full' : 'max-h-[88dvh]')}
+        className={cn('flex flex-col')}
       >
         <DrawerHeader>
           <DrawerTitle>Chat Info</DrawerTitle>
@@ -160,12 +160,12 @@ export function ChatDetails({
                           if (e.key === 'Enter') void saveNickname(m.id);
                           if (e.key === 'Escape') setEditingNick(null);
                         }}
-                        className="min-w-0 flex-1 rounded-lg border border-imsg-blue/50 bg-transparent px-2 py-1 text-[15px] outline-none"
+                        className="min-w-0 flex-1 rounded-lg border border-primary/50 bg-transparent px-2 py-1 text-[15px] outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => void saveNickname(m.id)}
-                        className="cursor-pointer text-[14px] font-semibold text-imsg-blue"
+                        className="cursor-pointer text-[14px] font-semibold text-primary"
                       >
                         Save
                       </button>
@@ -175,7 +175,7 @@ export function ChatDetails({
                       <span className="block truncate text-[15px] font-medium">
                         {m.nickname ?? m.display_name}
                         {m.id === conversation?.created_by && (
-                          <span className="ml-1.5 text-[12px] text-imsg-text-gray">
+                          <span className="ml-1.5 text-[12px] text-muted-foreground">
                             Admin
                           </span>
                         )}
@@ -194,7 +194,7 @@ export function ChatDetails({
                         setEditingNick(m.id);
                         setNickValue(m.nickname ?? '');
                       }}
-                      className="cursor-pointer text-imsg-text-gray active:opacity-60"
+                      className="cursor-pointer text-muted-foreground active:opacity-60"
                     >
                       <IoPencil className="size-4.5" />
                     </button>
@@ -214,7 +214,7 @@ export function ChatDetails({
             </ul>
 
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-border px-3 py-2">
-              <IoPersonAdd className="size-4 text-imsg-text-gray" />
+              <IoPersonAdd className="size-4 text-muted-foreground" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value.toLowerCase())}
@@ -230,7 +230,7 @@ export function ChatDetails({
                 type="button"
                 onClick={() => void addMember(p)}
                 disabled={busy}
-                className="mt-1 flex w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-imsg-gray/40"
+                className="mt-1 flex w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-muted/40"
               >
                 <Avatar name={p.display_name} size={32} />
                 <span className="min-w-0">

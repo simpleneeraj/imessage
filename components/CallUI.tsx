@@ -152,7 +152,7 @@ export function CallUI() {
           </motion.div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[16px] font-semibold">{name}</p>
-            <p className="text-[13px] text-imsg-text-gray">
+            <p className="text-[13px] text-muted-foreground">
               Incoming {media === 'video' ? 'video' : 'voice'} call…
             </p>
           </div>
@@ -223,7 +223,7 @@ export function CallUI() {
               animate={{ opacity: 1, y: 0 }}
               className={cn(
                 'text-[15px] tabular-nums',
-                onVideo ? 'text-white/80' : 'text-imsg-text-gray',
+                onVideo ? 'text-white/80' : 'text-muted-foreground',
               )}
             >
               {subtitle}
@@ -256,12 +256,12 @@ export function CallUI() {
               {ringing && (
                 <>
                   <motion.span
-                    className="absolute size-32 rounded-full bg-imsg-blue/25"
+                    className="absolute size-32 rounded-full bg-primary/25"
                     animate={{ scale: [1, 1.8], opacity: [0.5, 0] }}
                     transition={{ duration: 1.8, repeat: Infinity }}
                   />
                   <motion.span
-                    className="absolute size-32 rounded-full bg-imsg-blue/25"
+                    className="absolute size-32 rounded-full bg-primary/25"
                     animate={{ scale: [1, 1.8], opacity: [0.5, 0] }}
                     transition={{ duration: 1.8, repeat: Infinity, delay: 0.9 }}
                   />
@@ -344,7 +344,7 @@ export function CallUI() {
                     exit={{ opacity: 0, y: 12, scale: 0.9 }}
                     className={cn(
                       'flex items-center gap-1 rounded-full px-2 py-1.5 shadow-lg',
-                      onVideo ? 'bg-white/15 backdrop-blur' : 'bg-imsg-gray',
+                      onVideo ? 'bg-white/15 backdrop-blur' : 'bg-muted',
                     )}
                   >
                     {reactionItems.map((token) => (
