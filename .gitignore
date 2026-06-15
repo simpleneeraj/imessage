@@ -45,3 +45,5 @@ next-env.d.ts
 # local re-key secrets (never commit)
 scripts/.rekey-secrets.json
 .backups/
+
+certificates

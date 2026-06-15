@@ -12,7 +12,6 @@ import { idb } from '@/lib/idb';
 import { wireOutbox } from '@/lib/outbox';
 import { getPrivateKey } from '@/lib/keys';
 import { signOut } from '@/lib/auth';
-import { useInactivityLogout } from '@/lib/useInactivityLogout';
 import type { Profile } from '@/lib/types';
 import { AuthGate } from './AuthGate';
 import { Spinner } from '@/components/ui/spinner';
@@ -70,18 +69,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void bootstrap();
     wireOutbox();
 
-    // This app no longer ships a service worker. Tear down any SW (and its
-    // caches) left installed from a previous build, otherwise it keeps serving
-    // stale /_next chunks on devices that visited the old PWA.
+    // Register the push-only service worker (background notifications). It does
+    // no caching, so first clear any caches left by the old PWA caching worker —
+    // otherwise stale /_next chunks keep getting served.
     if ('serviceWorker' in navigator) {
-      void navigator.serviceWorker
-        .getRegistrations()
-        .then((regs) => regs.forEach((r) => void r.unregister()));
       if ('caches' in window) {
         void caches
           .keys()
           .then((keys) => keys.forEach((k) => void caches.delete(k)));
       }
+      void navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 
     return () => {

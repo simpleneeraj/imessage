@@ -5,6 +5,8 @@ import {
   IoEllipsisHorizontalCircleOutline,
   IoLogOutOutline,
   IoMoonOutline,
+  IoNotificationsOffOutline,
+  IoNotificationsOutline,
   IoPersonOutline,
   IoSunnyOutline,
 } from 'react-icons/io5';
@@ -21,12 +23,14 @@ import {
 import { useAuth } from './AuthProvider';
 import { ProfileEditor } from './ProfileEditor';
 import { useAppTheme } from '@/lib/useAppTheme';
+import { usePush } from '@/hooks/usePush';
 import { PALETTES, type PaletteId } from '@/lib/themes';
 
 export function HeaderMenu() {
   const { logout, profile } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const { palette, isDark, setPalette, toggleMode } = useAppTheme();
+  const push = usePush(profile.id);
 
   return (
     <>
@@ -63,6 +67,21 @@ export function HeaderMenu() {
             )}
             {isDark ? 'Light Mode' : 'Dark Mode'}
           </MenuItem>
+          {push.supported && (
+            <MenuItem
+              className="cursor-pointer"
+              closeOnClick={false}
+              disabled={push.busy}
+              onClick={() => void push.toggle()}
+            >
+              {push.enabled ? (
+                <IoNotificationsOffOutline className="size-4" />
+              ) : (
+                <IoNotificationsOutline className="size-4" />
+              )}
+              {push.enabled ? 'Turn Off Notifications' : 'Turn On Notifications'}
+            </MenuItem>
+          )}
           <MenuSeparator />
           <MenuRadioGroup
             value={palette}
