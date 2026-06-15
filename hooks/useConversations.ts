@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { idb } from "@/lib/idb";
-import type { Conversation, Profile } from "@/lib/types";
+import { getConvKey } from "@/lib/keys";
+import { decryptEnvelope, isEnvelope } from "@/lib/crypto";
+import { setPreview } from "@/lib/previews";
+import { previewText } from "@/hooks/useMessages";
+import type { Conversation, Profile, Message } from "@/lib/types";
 
 type ConversationRow = Omit<Conversation, "participants"> & {
   conversation_participants: {
@@ -18,6 +22,36 @@ function sortByActivity(conversations: Conversation[]): Conversation[] {
   return [...conversations].sort((a, b) =>
     (b.last_message_at ?? b.created_at).localeCompare(a.last_message_at ?? a.created_at)
   );
+}
+
+async function handleIncomingMessage(msg: Message) {
+  if (msg.deleted_at) return;
+
+  let text = msg.body;
+  let payload = undefined;
+
+  if (isEnvelope(msg.body)) {
+    const convKey = await getConvKey(msg.conversation_id);
+    if (!convKey) return;
+    try {
+      const decrypted = await decryptEnvelope(msg.body, convKey, msg.conversation_id);
+      payload = decrypted;
+      text = "text" in decrypted ? decrypted.text : "";
+    } catch {
+      text = "";
+    }
+  }
+
+  const decryptedMsg: Message = {
+    ...msg,
+    text,
+    payload,
+  };
+
+  void setPreview(msg.conversation_id, {
+    text: previewText(decryptedMsg),
+    at: msg.created_at,
+  });
 }
 
 export function useConversations(userId: string | null) {
@@ -85,6 +119,19 @@ export function useConversations(userId: string | null) {
           filter: `user_id=eq.${userId}`,
         },
         () => void refetch()
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          if (cancelled) return;
+          const msg = payload.new as Message;
+          void handleIncomingMessage(msg);
+        }
       )
       // Fetch once the subscription is live so no event can slip between
       // the initial fetch and the subscribe.

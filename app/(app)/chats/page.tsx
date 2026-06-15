@@ -1,3 +1,12 @@
+import type { Metadata } from 'next';
+import { siteConfig } from '@/lib/site-config';
+
+export const metadata: Metadata = {
+  title: `Chats | ${siteConfig.name}`,
+  description: 'Your conversations on festhub.',
+  robots: { index: false, follow: false },
+};
+
 // On mobile the AppShell hides this pane (the conversation list IS the home
 // screen); on desktop it fills the detail pane until a chat is selected.
 export default function Home() {

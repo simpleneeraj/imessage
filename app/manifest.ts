@@ -1,10 +1,11 @@
 import type { MetadataRoute } from 'next';
+import { siteConfig } from '@/lib/site-config';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Love Quotes',
-    short_name: 'Love Quotes',
-    description: 'A small collection of words about love.',
+    name: siteConfig.name,
+    short_name: siteConfig.name,
+    description: siteConfig.description,
     start_url: '/',
     display: 'standalone',
     background_color: '#e9e2d7',
@@ -26,3 +27,4 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
   };
 }
+
