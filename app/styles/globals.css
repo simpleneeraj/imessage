@@ -167,6 +167,8 @@
   --chat-bg: var(--background);
   /* Outgoing bubble fill — supports gradients; per-chat override via inline style. */
   --bubble-bg: var(--color-primary);
+  /* Wallpaper overlay tint — blends theme color over the canvas wallpaper. */
+  --wallpaper-overlay: color-mix(in srgb, #f4f1ea 75%, transparent);
   /* Goodreads light palette */
   --background: #f4f1ea;
   --foreground: #382110;
@@ -205,6 +207,7 @@
 
 .goodreads-dark {
   color-scheme: dark;
+  --wallpaper-overlay: color-mix(in srgb, #181612 80%, transparent);
   --chat-bg: #181612;
   --bubble-bg: #00635d;
   --background: #1c1a14;
