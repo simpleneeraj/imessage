@@ -32,6 +32,7 @@ type Signal =
       from: CallPeer;
       media: CallMedia;
       sdp: RTCSessionDescriptionInit;
+      conversationId?: string;
     }
   | { kind: 'answer'; callId: string; sdp: RTCSessionDescriptionInit }
   | { kind: 'ice'; callId: string; candidate: RTCIceCandidateInit }
@@ -39,9 +40,11 @@ type Signal =
   | { kind: 'cancel'; callId: string }
   | { kind: 'hangup'; callId: string }
   | { kind: 'reaction'; callId: string; emoji: string }
-  | { kind: 'raise'; callId: string; raised: boolean };
+  | { kind: 'raise'; callId: string; raised: boolean }
+  | { kind: 'chat'; callId: string; id: string; text: string; sender: string };
 
 export type CallReaction = { id: string; emoji: string; mine: boolean };
+export type CallChatMessage = { id: string; text: string; sender: string; mine: boolean; ts: number };
 
 type CallContextValue = {
   status: CallStatus;
@@ -59,6 +62,8 @@ type CallContextValue = {
   handRaised: boolean;
   peerRaised: boolean;
   reactions: CallReaction[];
+  chatMessages: CallChatMessage[];
+  conversationId: string | null;
   startCall: (peer: CallPeer, media: CallMedia, conversationId?: string) => void;
   accept: () => void;
   decline: () => void;
@@ -67,6 +72,7 @@ type CallContextValue = {
   toggleCam: () => void;
   toggleHand: () => void;
   sendReaction: (emoji: string) => void;
+  sendChat: (text: string) => void;
 };
 
 const CallContext = createContext<CallContextValue | null>(null);
@@ -87,6 +93,8 @@ const IDLE_CALL: CallContextValue = {
   handRaised: false,
   peerRaised: false,
   reactions: [],
+  chatMessages: [],
+  conversationId: null,
   startCall: () => {},
   accept: () => {},
   decline: () => {},
@@ -95,6 +103,7 @@ const IDLE_CALL: CallContextValue = {
   toggleCam: () => {},
   toggleHand: () => {},
   sendReaction: () => {},
+  sendChat: () => {},
 };
 
 export function useCall(): CallContextValue {
@@ -137,6 +146,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [handRaised, setHandRaised] = useState(false);
   const [peerRaised, setPeerRaised] = useState(false);
   const [reactions, setReactions] = useState<CallReaction[]>([]);
+  const [chatMessages, setChatMessages] = useState<CallChatMessage[]>([]);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localRef = useRef<MediaStream | null>(null);
@@ -225,6 +235,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setHandRaised(false);
     setPeerRaised(false);
     setReactions([]);
+    setChatMessages([]);
 
     if (next === 'ended') {
       setEndedInfo({ peerName, duration });
@@ -315,9 +326,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           await signal({
             kind: 'invite',
             callId,
-            from: { id: userId, name: profile.display_name },
+            from: { id: userId, name: profile?.display_name ?? 'Unknown' },
             media: m,
             sdp: offer,
+            conversationId: conversationId,
           });
         } catch (e) {
           setError(
@@ -327,7 +339,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         }
       })();
     },
-    [status, openPeerChannel, getMedia, createPc, signal, userId, profile.display_name, cleanup],
+    [status, openPeerChannel, getMedia, createPc, signal, userId, profile?.display_name, cleanup],
   );
 
   const accept = useCallback(() => {
@@ -418,6 +430,18 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     });
   }, [signal]);
 
+  const sendChat = useCallback(
+    (text: string) => {
+      const callId = callIdRef.current;
+      if (!callId || !text.trim()) return;
+      const id = crypto.randomUUID();
+      const senderName = profile?.display_name ?? 'You';
+      setChatMessages((prev) => [...prev, { id, text: text.trim(), sender: senderName, mine: true, ts: Date.now() }]);
+      void signal({ kind: 'chat', callId, id, text: text.trim(), sender: senderName });
+    },
+    [signal, profile?.display_name],
+  );
+
   // --- incoming signaling (kept in a ref so the channel sub never goes stale) ---
   const handle = (msg: Signal) => {
     if (msg.kind === 'invite') {
@@ -431,6 +455,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       peerRef.current = msg.from;
       roleRef.current = 'callee';
       mediaRef.current = msg.media;
+      convIdRef.current = msg.conversationId ?? null;
       offerRef.current = msg.sdp;
       setPeer(msg.from);
       setMedia(msg.media);
@@ -453,6 +478,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       else pendingIce.current.push(msg.candidate);
     } else if (msg.kind === 'reaction') {
       pushReaction(msg.emoji, false);
+    } else if (msg.kind === 'chat') {
+      setChatMessages((prev) => [...prev, { id: msg.id, text: msg.text, sender: msg.sender, mine: false, ts: Date.now() }]);
     } else if (msg.kind === 'raise') {
       setPeerRaised(msg.raised);
     } else if (msg.kind === 'decline' || msg.kind === 'cancel' || msg.kind === 'hangup') {
@@ -492,6 +519,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         handRaised,
         peerRaised,
         reactions,
+        chatMessages,
+        conversationId: convIdRef.current,
         startCall,
         accept,
         decline,
@@ -500,6 +529,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         toggleCam,
         toggleHand,
         sendReaction,
+        sendChat,
       }}
     >
       {children}

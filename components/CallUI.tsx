@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   IoCall,
+  IoChatbubbleEllipses,
   IoHandLeft,
   IoHandLeftOutline,
   IoHappyOutline,
   IoMic,
   IoMicOff,
+  IoSend,
   IoVideocam,
   IoVideocamOff,
 } from 'react-icons/io5';
 import { useCall } from './CallProvider';
+import type { CallChatMessage } from './CallProvider';
 import { Avatar } from './Avatar';
 import { cn } from '@/lib/utils';
 import { REACTION_SETS, TapbackGlyph } from './Tapback';
@@ -101,6 +104,95 @@ function RoundButton({
   );
 }
 
+/* ─── Fading chat message bubble ─── */
+function FadingChatBubble({ msg }: { msg: CallChatMessage }) {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.95 }}
+          transition={{ duration: 0.35 }}
+          className={cn(
+            'flex max-w-[80%] flex-col gap-0.5 rounded-2xl px-3 py-1.5 shadow-lg backdrop-blur-md',
+            msg.mine
+              ? 'self-end bg-primary/80 text-white'
+              : 'self-start bg-white/20 text-white',
+          )}
+        >
+          {!msg.mine && (
+            <span className="text-[10px] font-semibold tracking-wide opacity-70">
+              {msg.sender}
+            </span>
+          )}
+          <span className="text-[14px] leading-snug">{msg.text}</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+
+
+/* ─── Draggable PiP ─── */
+function DraggablePiP({
+  localStream,
+  camOn,
+  handRaised,
+}: {
+  localStream: MediaStream;
+  camOn: boolean;
+  handRaised: boolean;
+}) {
+  const constraintsRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <>
+      {/* Invisible constraints container that spans the full screen */}
+      <div
+        ref={constraintsRef}
+        className="pointer-events-none absolute inset-0 z-19"
+      />
+      <motion.div
+        drag
+        dragConstraints={constraintsRef}
+        dragElastic={0.1}
+        dragMomentum={false}
+        whileDrag={{ scale: 1.05 }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ touchAction: 'none' }}
+        className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 h-40 w-28 cursor-grab overflow-hidden rounded-2xl bg-black/40 shadow-2xl ring-1 ring-white/20 active:cursor-grabbing"
+      >
+        {camOn ? (
+          <Stream
+            stream={localStream}
+            muted
+            className="size-full -scale-x-100 object-cover"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center bg-black/60">
+            <IoVideocamOff className="size-6 text-white/50" />
+          </div>
+        )}
+        {handRaised && (
+          <span className="absolute bottom-1 left-1 rounded-full bg-amber-400 px-1.5 text-[12px]">
+            ✋
+          </span>
+        )}
+      </motion.div>
+    </>
+  );
+}
+
 export function CallUI() {
   const {
     status,
@@ -116,6 +208,7 @@ export function CallUI() {
     handRaised,
     peerRaised,
     reactions,
+    chatMessages,
     accept,
     decline,
     hangup,
@@ -123,12 +216,23 @@ export function CallUI() {
     toggleCam,
     toggleHand,
     sendReaction,
+    sendChat,
   } = useCall();
 
   const elapsed = useElapsed(connectedAt);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatText, setChatText] = useState('');
+  const chatInputRef = useRef<HTMLInputElement>(null);
   // In-call reactions use the same classic tapback set as messages.
   const reactionItems = REACTION_SETS.classic.items;
+
+  const handleSendChat = useCallback(() => {
+    if (!chatText.trim()) return;
+    sendChat(chatText.trim());
+    setChatText('');
+    chatInputRef.current?.focus();
+  }, [chatText, sendChat]);
 
   if (status === 'idle') return null;
 
@@ -276,24 +380,13 @@ export function CallUI() {
             </div>
           )}
 
-          {/* Local PiP */}
-          {media === 'video' && localStream && camOn && status !== 'ended' && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 h-40 w-28 overflow-hidden rounded-2xl bg-black/40 ring-1 ring-white/20"
-            >
-              <Stream
-                stream={localStream}
-                muted
-                className="size-full -scale-x-100 object-cover"
-              />
-              {handRaised && (
-                <span className="absolute bottom-1 left-1 rounded-full bg-amber-400 px-1.5 text-[12px]">
-                  ✋
-                </span>
-              )}
-            </motion.div>
+          {/* Draggable Local PiP */}
+          {media === 'video' && localStream && status !== 'ended' && (
+            <DraggablePiP
+              localStream={localStream}
+              camOn={camOn}
+              handRaised={handRaised}
+            />
           )}
 
           {/* Floating reactions */}
@@ -317,6 +410,75 @@ export function CallUI() {
               ))}
             </AnimatePresence>
           </div>
+
+          {/* In-call chat messages floating overlay */}
+          {status === 'active' && chatMessages.length > 0 && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-36 z-25 flex max-h-56 flex-col gap-1.5 overflow-hidden px-4">
+              <AnimatePresence>
+                {chatMessages.slice(-8).map((msg) => (
+                  <FadingChatBubble key={msg.id} msg={msg} />
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Chat input bar */}
+          <AnimatePresence>
+            {chatOpen && status === 'active' && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 16 }}
+                className="absolute inset-x-0 bottom-32 z-30 px-4"
+              >
+                <div
+                  className={cn(
+                    'flex items-center gap-2 rounded-full px-3 py-1.5 shadow-xl',
+                    onVideo
+                      ? 'bg-white/15 backdrop-blur-xl'
+                      : 'bg-muted/90 backdrop-blur',
+                  )}
+                >
+                  <input
+                    ref={chatInputRef}
+                    type="text"
+                    value={chatText}
+                    onChange={(e) => setChatText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSendChat();
+                      }
+                    }}
+                    placeholder="Message…"
+                    maxLength={200}
+                    autoFocus
+                    className={cn(
+                      'flex-1 bg-transparent text-[15px] outline-none placeholder:opacity-50',
+                      onVideo
+                        ? 'text-white placeholder:text-white/50'
+                        : 'text-foreground placeholder:text-muted-foreground',
+                    )}
+                  />
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.85 }}
+                    onClick={handleSendChat}
+                    disabled={!chatText.trim()}
+                    className={cn(
+                      'flex size-8 items-center justify-center rounded-full transition-opacity',
+                      chatText.trim()
+                        ? 'bg-primary text-white opacity-100'
+                        : 'opacity-30',
+                      onVideo && !chatText.trim() ? 'text-white' : '',
+                    )}
+                  >
+                    <IoSend className="size-4" />
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {error && (
             <p className="absolute bottom-28 z-20 rounded-full bg-red-500/90 px-4 py-1.5 text-[13px] text-white">
@@ -416,6 +578,21 @@ export function CallUI() {
                 >
                   <IoHappyOutline className="size-6" />
                 </RoundButton>
+
+                {/* Chat toggle button */}
+                {status === 'active' && (
+                  <RoundButton
+                    onClick={() => {
+                      setChatOpen((o) => !o);
+                      setPickerOpen(false);
+                    }}
+                    onVideo={onVideo}
+                    engaged={chatOpen}
+                    label={chatOpen ? 'Close chat' : 'Open chat'}
+                  >
+                    <IoChatbubbleEllipses className="size-6" />
+                  </RoundButton>
+                )}
 
                 <RoundButton
                   onClick={hangup}
