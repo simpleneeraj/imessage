@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { IoHeart, IoHeartOutline, IoLogoOctocat, IoSearch } from 'react-icons/io5';
 import Logo from './logo';
+import { siteConfig } from '@/lib/site-config';
 import {
   CATEGORIES,
   QUOTES,
@@ -162,13 +163,7 @@ export function LoveQuotes() {
             onClick={enterChat}
             className="transition-opacity active:opacity-70"
           >
-            <Logo
-              size="lg"
-              parts={[
-                { text: 'fest', className: 'text-[#382110]' },
-                { text: 'hub', className: 'text-[#00635d]' },
-              ]}
-            />
+            <Logo size="lg" parts={[...siteConfig.logoParts]} />
           </button>
           <div className="ml-auto flex min-w-0 flex-1 items-center gap-2 rounded-md border border-[#d6cdb8] bg-white px-2.5 py-1.5 sm:max-w-xs">
             <IoSearch className="size-4 shrink-0 text-[#9b8e79]" />
@@ -265,7 +260,7 @@ export function LoveQuotes() {
           Made with <IoHeart className="inline size-2.5 text-rose-500" /> for the hopeless romantics.
         </p>
         <p className="mt-1">Quote of the day provided by the ZenQuotes API.</p>
-        <p className="mt-1">© {new Date().getFullYear()} festhub</p>
+        <p className="mt-1">© {new Date().getFullYear()} {siteConfig.name}</p>
         <button
           type="button"
           onPointerDown={heartDown}

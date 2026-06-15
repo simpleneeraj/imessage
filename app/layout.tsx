@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { ThemeProvider } from 'next-themes';
 import type { Metadata, Viewport } from 'next';
 import { THEMES, DEFAULT_THEME } from '@/lib/themes';
+import { siteConfig } from '@/lib/site-config';
 import fonts from './fonts';
 
 const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
@@ -11,33 +12,27 @@ const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'FestHub',
-  description: 'Discover and share your favourite quotes, all in one place.',
-  applicationName: 'FestHub',
-  keywords: [
-    'quotes',
-    'festhub',
-    'love quotes',
-    'inspirational quotes',
-    'famous quotes',
-  ],
+  title: siteConfig.title,
+  description: siteConfig.description,
+  applicationName: siteConfig.applicationName,
+  keywords: [...siteConfig.keywords],
   openGraph: {
     type: 'website',
-    siteName: 'FestHub',
-    title: 'FestHub',
-    description: 'Discover and share your favourite quotes, all in one place.',
-    images: [{ url: '/logo/icon-512.png', width: 512, height: 512 }],
+    siteName: siteConfig.name,
+    title: siteConfig.title,
+    description: siteConfig.description,
+    images: [{ url: siteConfig.ogImage, width: 512, height: 512 }],
   },
   twitter: {
     card: 'summary',
-    title: 'FestHub',
-    description: 'Discover and share your favourite quotes, all in one place.',
-    images: ['/logo/icon-512.png'],
+    title: siteConfig.title,
+    description: siteConfig.description,
+    images: [siteConfig.ogImage],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'FestHub',
+    title: siteConfig.title,
   },
   // Icons come from the file conventions: app/favicon.ico, app/icon.tsx,
   // app/apple-icon.tsx (no manual override here).
