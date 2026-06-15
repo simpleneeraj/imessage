@@ -6,6 +6,7 @@ import {
   enablePush,
   isPushEnabled,
   isPushSupported,
+  lastPushError,
 } from '@/lib/push';
 
 // Manages this device's Web Push subscription state for the settings toggle.
@@ -39,7 +40,7 @@ export function usePush() {
               ? 'This browser doesn’t support push notifications.'
               : result === 'no-vapid'
                 ? 'Push isn’t configured (missing VAPID key in this build).'
-                : 'Could not enable notifications. Please try again.';
+                : `Could not enable notifications.\n\n${lastPushError || 'Please try again.'}`;
         window.alert(msg);
       }
     } finally {

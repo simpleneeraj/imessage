@@ -18,8 +18,8 @@
   "maskableIconUrl": "https://www.festhub.in/logo/icon-512.png",
   "webManifestUrl": "https://www.festhub.in/manifest.webmanifest",
   "fallbackType": "customtabs",
-  "appVersionName": "1.0.7",
-  "appVersionCode": 8,
+  "appVersionName": "1.0.8",
+  "appVersionCode": 9,
   "shortcuts": [],
   "signingKey": {
     "path": "./android.keystore",

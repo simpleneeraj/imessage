@@ -43,8 +43,14 @@ export type EnableResult =
   | 'denied'
   | 'error';
 
+// Set by enablePush() on failure so the UI can surface the *specific* reason
+// (the generic 'error' code alone made every distinct failure indistinguishable
+// on a phone where there's no console to inspect).
+export let lastPushError = '';
+
 /** Request permission, subscribe, and persist the subscription. */
 export async function enablePush(): Promise<EnableResult> {
+  lastPushError = '';
   if (!isPushSupported()) return 'unsupported';
   if (!VAPID_PUBLIC_KEY) return 'no-vapid';
 
@@ -64,6 +70,15 @@ export async function enablePush(): Promise<EnableResult> {
         applicationServerKey: urlBase64ToBuffer(VAPID_PUBLIC_KEY),
       }));
 
+    // Confirm there's a live Supabase session — save_push_subscription needs
+    // auth.uid(); without it the RPC raises "auth required" and the row never
+    // lands (the most common silent cause of "subscribed but no pushes").
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      lastPushError = 'Not signed in (no Supabase session). Sign in again, then enable.';
+      return 'error';
+    }
+
     const json = sub.toJSON();
     // Reassign this browser's endpoint to the current account (handles two
     // accounts sharing one browser, which RLS would otherwise block).
@@ -72,8 +87,13 @@ export async function enablePush(): Promise<EnableResult> {
       p_p256dh: json.keys?.p256dh ?? '',
       p_auth: json.keys?.auth ?? '',
     });
-    return error ? 'error' : 'ok';
-  } catch {
+    if (error) {
+      lastPushError = `Save failed: ${error.message}`;
+      return 'error';
+    }
+    return 'ok';
+  } catch (err) {
+    lastPushError = `Subscribe failed: ${(err as Error)?.name ?? ''} ${(err as Error)?.message ?? String(err)}`.trim();
     return 'error';
   }
 }
