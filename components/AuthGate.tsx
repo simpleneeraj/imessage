@@ -58,12 +58,7 @@ export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
           {/* Header */}
           <CardHeader className="flex flex-col items-center text-center">
             <div className="mb-4 flex size-16 items-center justify-center rounded-xl bg-accent">
-              <span
-                className="text-4xl leading-none"
-                style={{ fontFamily: 'var(--font-alice), Georgia, serif' }}
-              >
-                f
-              </span>
+              <span className="font-heading text-4xl leading-none">f</span>
             </div>
 
             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">

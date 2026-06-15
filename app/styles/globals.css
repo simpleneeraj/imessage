@@ -7,6 +7,7 @@
 @theme inline {
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
+  --font-quote: var(--font-quote);
   --font-mono: var(--font-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -162,6 +163,7 @@
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
   --font-heading: var(--font-alice);
+  --font-quote: var(--font-merriweather), Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   /* Chat surface — transparent when a wallpaper is active (.has-wallpaper). */
   --chat-bg: var(--background);

@@ -1,47 +1,37 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
-import { IoHeart, IoHeartOutline, IoLogoOctocat, IoSearch } from 'react-icons/io5';
+import { useAtom } from 'jotai';
+import { IoHeart, IoHeartOutline, IoMailOutline, IoSearch } from 'react-icons/io5';
 import Logo from './logo';
 import { siteConfig } from '@/lib/site-config';
-import {
-  CATEGORIES,
-  QUOTES,
-  likeCount,
-  type Category,
-  type Quote,
-} from '@/lib/quotes-data';
+import { likedQuotesAtom } from '@/lib/store/likes';
+import { likeCount, type Quote } from '@/lib/quotes-data';
+import type { QuotesData } from '@/lib/quotes/sources';
 
-// Public face of the app: a Goodreads-style "Love Quotes" reading page. The
-// chat is reachable only via the secret door — triple-tap the wordmark.
+// Public face of the app: a Goodreads-style quotes page. Quotes are aggregated
+// server-side (SSR) and passed in. The chat is reachable only via the secret
+// door: type the unlock phrase into the newsletter box.
 
-const fetcher = (url: string) =>
-  fetch(url).then((r) => r.json() as Promise<{ text: string; author: string }>);
-
-const FALLBACK_QOTD = {
-  text: 'Being deeply loved by someone gives you strength, while loving someone deeply gives you courage.',
-  author: 'Lao Tzu',
-};
-
-const serif = { fontFamily: 'var(--font-merriweather), Georgia, serif' };
-const display = { fontFamily: 'var(--font-alice), Georgia, serif' };
 const fmt = (n: number) => n.toLocaleString('en-US');
+const UNLOCK = (
+  process.env.NEXT_PUBLIC_UNLOCK_PHRASE ?? 'our secret'
+).toLowerCase();
+
+const quoteId = (q: Quote) => q.author + q.text.slice(0, 16);
 
 function LikeButton({
-  id,
   liked,
   onToggle,
 }: {
-  id: string;
   liked: boolean;
-  onToggle: (id: string) => void;
+  onToggle: () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={() => onToggle(id)}
+      onClick={onToggle}
       aria-pressed={liked}
       className="flex shrink-0 items-center gap-1 rounded-md border border-[#d6cdb8] bg-[#f9f7f1] px-2.5 py-1 text-[12px] font-semibold text-[#382110] transition-colors hover:bg-[#efe9da] active:scale-95"
     >
@@ -62,34 +52,31 @@ function QuoteCard({
 }: {
   quote: Quote;
   liked: boolean;
-  onToggle: (id: string) => void;
+  onToggle: () => void;
 }) {
   const base = likeCount(quote.text);
-  const id = quote.author + quote.text.slice(0, 12);
   return (
     <article className="rounded-md border border-[#e6e0cf] bg-white p-5 shadow-[0_1px_0_rgba(0,0,0,0.04)]">
       <div className="flex items-start justify-between gap-3">
-        <blockquote
-          className="whitespace-pre-line text-[17px] leading-[1.7] text-[#382110]"
-          style={serif}
-        >
+        <blockquote className="font-quote whitespace-pre-line text-[17px] leading-[1.7] text-[#382110]">
           &ldquo;{quote.text}&rdquo;
         </blockquote>
-        <LikeButton id={id} liked={liked} onToggle={onToggle} />
+        <LikeButton liked={liked} onToggle={onToggle} />
       </div>
-      <p className="mt-3 text-[14px] text-[#7a6a55]" style={serif}>
-        ―{' '}
-        <span className="font-semibold text-[#00635d]">{quote.author}</span>
+      <p className="font-quote mt-3 text-[14px] text-[#7a6a55]">
+        ― <span className="font-semibold text-[#00635d]">{quote.author}</span>
       </p>
-      <p className="mt-2 text-[12px] leading-5 text-[#9b8e79]">
-        tags:{' '}
-        {quote.tags.map((t, i) => (
-          <span key={t}>
-            <span className="text-[#00635d]">{t}</span>
-            {i < quote.tags.length - 1 ? ', ' : ''}
-          </span>
-        ))}
-      </p>
+      {quote.tags.length > 0 && (
+        <p className="mt-2 text-[12px] leading-5 text-[#9b8e79]">
+          tags:{' '}
+          {quote.tags.map((t, i) => (
+            <span key={t}>
+              <span className="text-[#00635d]">{t}</span>
+              {i < quote.tags.length - 1 ? ', ' : ''}
+            </span>
+          ))}
+        </p>
+      )}
       <p className="mt-2 text-[12px] font-semibold text-[#7a6a55]">
         {fmt(base + (liked ? 1 : 0))} likes
       </p>
@@ -97,74 +84,52 @@ function QuoteCard({
   );
 }
 
-export function LoveQuotes() {
+export function LoveQuotes({ data }: { data: QuotesData }) {
   const router = useRouter();
-  const taps = useRef<number[]>([]);
-  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [active, setActive] = useState<Category>('Love');
+  const [active, setActive] = useState(data.categoryNames[0] ?? 'Love');
   const [query, setQuery] = useState('');
-  const [liked, setLiked] = useState<Record<string, boolean>>({});
+  const [liked, setLiked] = useAtom(likedQuotesAtom);
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
-  const { data, isLoading } = useSWR('/api/qotd', fetcher, {
-    revalidateOnFocus: false,
-    shouldRetryOnError: false,
-  });
-  const qotd = data ?? FALLBACK_QOTD; // fallback if the proxy itself fails
-  const showSkeleton = isLoading && !data;
-
-  // Secret door on the footer ♥: double-tap OR long-press opens the chat.
-  const enterChat = () => router.push('/chats');
-  function heartDown() {
-    pressTimer.current = setTimeout(() => {
-      pressTimer.current = null;
-      enterChat(); // long-press
-    }, 600);
-  }
-  function heartUp() {
-    if (!pressTimer.current) return; // long-press already fired
-    clearTimeout(pressTimer.current);
-    pressTimer.current = null;
-    const now = Date.now();
-    taps.current = [...taps.current.filter((t) => now - t < 500), now];
-    if (taps.current.length >= 2) {
-      taps.current = [];
-      enterChat(); // double-tap
-    }
-  }
-  function heartCancel() {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-  }
-
-  const toggle = (id: string) =>
-    setLiked((m) => ({ ...m, [id]: !m[id] }));
+  const toggle = (id: string) => setLiked((m) => ({ ...m, [id]: !m[id] }));
 
   const term = query.trim().toLowerCase();
-  const list: Quote[] = term
-    ? Object.values(QUOTES)
-        .flat()
-        .filter(
-          (q) =>
-            q.text.toLowerCase().includes(term) ||
-            q.author.toLowerCase().includes(term) ||
-            q.tags.some((t) => t.includes(term)),
-        )
-    : QUOTES[active];
+  let list: Quote[];
+  if (term) {
+    const seen = new Set<string>();
+    list = Object.values(data.categories)
+      .flat()
+      .filter((q) => {
+        const id = quoteId(q);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return (
+          q.text.toLowerCase().includes(term) ||
+          q.author.toLowerCase().includes(term) ||
+          q.tags.some((t) => t.includes(term))
+        );
+      });
+  } else {
+    list = data.categories[active] ?? [];
+  }
+
+  // Secret door: type the unlock phrase into the newsletter box → open chat.
+  function tryUnlock() {
+    if (email.trim().toLowerCase() === UNLOCK) {
+      router.push('/chats');
+      return;
+    }
+    setSubscribed(true);
+    setEmail('');
+  }
 
   return (
     <div className="min-h-dvh bg-[#f4f1ea] text-[#382110]">
       {/* Masthead */}
       <header className="sticky top-0 z-10 border-b border-[#e0d8c4] bg-[#f4f1ea]/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <button
-            type="button"
-            onClick={enterChat}
-            className="transition-opacity active:opacity-70"
-          >
-            <Logo size="lg" parts={[...siteConfig.logoParts]} />
-          </button>
+          <Logo size="lg" parts={[...siteConfig.logoParts]} />
           <div className="ml-auto flex min-w-0 flex-1 items-center gap-2 rounded-md border border-[#d6cdb8] bg-white px-2.5 py-1.5 sm:max-w-xs">
             <IoSearch className="size-4 shrink-0 text-[#9b8e79]" />
             <input
@@ -180,35 +145,22 @@ export function LoveQuotes() {
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-5">
         {/* Quote of the Day */}
         <section className="mb-6">
-          <h2
-            className="mb-2 text-[13px] font-semibold uppercase tracking-[0.18em] text-[#9b8e79]"
-          >
+          <h2 className="mb-2 text-[13px] font-semibold uppercase tracking-[0.18em] text-[#9b8e79]">
             Quote of the Day
           </h2>
-          {showSkeleton ? (
-            <div className="animate-pulse rounded-md border border-[#e6e0cf] bg-[#efe9da] p-6">
-              <div className="h-4 w-5/6 rounded bg-[#ded5bf]" />
-              <div className="mt-2 h-4 w-3/4 rounded bg-[#ded5bf]" />
-              <div className="mt-4 h-3 w-32 rounded bg-[#ded5bf]" />
-            </div>
-          ) : (
-            <article className="rounded-md border border-[#d8b24a]/40 bg-gradient-to-b from-[#fbf4df] to-white p-6">
-              <blockquote
-                className="text-[20px] leading-[1.6] text-[#382110]"
-                style={serif}
-              >
-                &ldquo;{qotd.text}&rdquo;
-              </blockquote>
-              <p className="mt-3 text-[14px] font-semibold text-[#00635d]">
-                ― {qotd.author}
-              </p>
-            </article>
-          )}
+          <article className="rounded-md border border-[#d8b24a]/40 bg-linear-to-b from-[#fbf4df] to-white p-6">
+            <blockquote className="font-quote text-[20px] leading-[1.6] text-[#382110]">
+              &ldquo;{data.qotd.text}&rdquo;
+            </blockquote>
+            <p className="mt-3 text-[14px] font-semibold text-[#00635d]">
+              ― {data.qotd.author}
+            </p>
+          </article>
         </section>
 
         {/* Categories */}
-        <nav className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {CATEGORIES.map((c) => (
+        <nav className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
+          {data.categoryNames.map((c) => (
             <button
               key={c}
               type="button"
@@ -241,50 +193,64 @@ export function LoveQuotes() {
             </p>
           ) : (
             list.map((q) => {
-              const id = q.author + q.text.slice(0, 12);
+              const id = quoteId(q);
               return (
                 <QuoteCard
                   key={id}
                   quote={q}
                   liked={Boolean(liked[id])}
-                  onToggle={toggle}
+                  onToggle={() => toggle(id)}
                 />
               );
             })
           )}
         </section>
+
+        {/* Newsletter — the secret door (type the unlock phrase) */}
+        <section className="mt-10 rounded-lg border border-[#e0d8c4] bg-white p-6 text-center">
+          <IoMailOutline className="mx-auto size-7 text-[#00635d]" />
+          <h3 className="font-quote mt-2 text-[18px] font-bold text-[#382110]">
+            A quote a day
+          </h3>
+          <p className="mt-1 text-[13px] text-[#7a6a55]">
+            Get the Quote of the Day in your inbox every morning.
+          </p>
+          {subscribed ? (
+            <p className="mt-4 text-[14px] font-semibold text-[#00635d]">
+              You&apos;re subscribed 💌 Check your inbox.
+            </p>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                tryUnlock();
+              }}
+              className="mx-auto mt-4 flex max-w-sm flex-col gap-2 sm:flex-row"
+            >
+              <input
+                type="text"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                aria-label="Email address"
+                className="min-w-0 flex-1 rounded-md border border-[#d6cdb8] bg-[#faf8f2] px-3 py-2 text-[14px] outline-none placeholder:text-[#b3a78f] focus:border-[#00635d]"
+              />
+              <button
+                type="submit"
+                className="rounded-md bg-[#382110] px-4 py-2 text-[14px] font-semibold text-[#f4f1ea] transition-opacity active:opacity-80"
+              >
+                Subscribe
+              </button>
+            </form>
+          )}
+        </section>
       </main>
 
       <footer className="border-t border-[#e0d8c4] py-6 text-center text-[12px] text-[#9b8e79]">
-        <p>
-          Made with <IoHeart className="inline size-2.5 text-rose-500" /> for the hopeless romantics.
+        <p>Quotes provided by the ZenQuotes &amp; API Ninjas APIs.</p>
+        <p className="mt-1">
+          © {new Date().getFullYear()} {siteConfig.name}
         </p>
-        <p className="mt-1">Quote of the day provided by the ZenQuotes API.</p>
-        <p className="mt-1">© {new Date().getFullYear()} {siteConfig.name}</p>
-        <button
-          type="button"
-          onPointerDown={heartDown}
-          onPointerUp={heartUp}
-          onPointerLeave={heartCancel}
-          onPointerCancel={heartCancel}
-          onContextMenu={(e) => e.preventDefault()}
-          aria-label="secret entrance"
-          className="mt-3 cursor-pointer select-none outline-none"
-          style={{ touchAction: 'manipulation' }}
-        >
-          <IoLogoOctocat
-            className="size-5 text-[#b3a78f] transition-colors hover:text-[#382110]"
-            style={{ animation: 'octo-spin 3s ease-in-out infinite' }}
-          />
-        </button>
-        <style>{`
-          @keyframes octo-spin {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(-15deg) scale(1.15); }
-            50% { transform: rotate(0deg) scale(1); }
-            75% { transform: rotate(15deg) scale(1.15); }
-          }
-        `}</style>
       </footer>
     </div>
   );

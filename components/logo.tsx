@@ -20,7 +20,7 @@ type LogoProps = {
 };
 export default function Logo({ size = 'md', parts }: LogoProps) {
   return (
-    <p className={style({ size, className: 'font-alice' })}>
+    <p className={style({ size })}>
       {parts.map((part) => (
         <span key={part.text} className={part.className}>
           {part.text}
