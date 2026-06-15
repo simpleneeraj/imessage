@@ -263,10 +263,10 @@ export function LoveQuotes() {
             onPointerCancel={heartCancel}
             onContextMenu={(e) => e.preventDefault()}
             aria-label="heart"
-            className="cursor-pointer select-none px-0.5 align-baseline text-rose-400/80 outline-none active:scale-95"
+            className="cursor-pointer select-none px-0.5 align-baseline outline-none active:scale-95"
             style={{ touchAction: 'manipulation' }}
           >
-            ♥
+             <IoHeart className="size-2.5 text-rose-500" />
           </button>{' '}
           for the hopeless romantics.
         </p>
