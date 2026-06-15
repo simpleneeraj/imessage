@@ -26,5 +26,6 @@
     "alias": "android"
   },
   "fingerprints": [],
-  "generatorApp": "bubblewrap-cli"
+  "generatorApp": "bubblewrap-cli",
+  "splashScreenFadeOutDuration": 300
 }
