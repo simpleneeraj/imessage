@@ -1,12 +1,14 @@
 {
   "name": "imessage-clone",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": true,
   "scripts": {
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "icons": "node scripts/gen-icons.mjs",
+    "build:apk": "bash scripts/build-apk.sh",
     "version:bump": "node scripts/bump-version.mjs"
   },
   "dependencies": {

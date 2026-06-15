@@ -22,6 +22,7 @@ import { Celebration } from './Celebration';
 import type { Expression } from '@/lib/expressions';
 import MaskWallpaper from '@/plugins/mask-wallpaper';
 import { parseWallpaper, wallpaperOptionsFor } from '@/utils/config';
+import { useAppTheme } from '@/lib/useAppTheme';
 
 type ConversationRow = Omit<Conversation, 'participants'> & {
   conversation_participants: {
@@ -45,9 +46,7 @@ function useConversation(id: string): Conversation | null {
     const load = () =>
       void supabase
         .from('conversations')
-        .select(
-          '*, conversation_participants(user_id, nickname, profiles(*))',
-        )
+        .select('*, conversation_participants(user_id, nickname, profiles(*))')
         .eq('id', id)
         .maybeSingle()
         .then(({ data }) => {
@@ -123,6 +122,7 @@ function ChatThreadInner({
   conversation: Conversation | null;
 }) {
   const router = useRouter();
+  const { isDark } = useAppTheme();
   const {
     messages,
     reactions,
@@ -143,8 +143,8 @@ function ChatThreadInner({
   const events = useEvents(id, userId);
   const wallpaper = conversation?.wallpaper ?? null;
   const wallpaperOptions = useMemo(
-    () => wallpaperOptionsFor(wallpaper),
-    [wallpaper],
+    () => wallpaperOptionsFor(wallpaper, isDark),
+    [wallpaper, isDark],
   );
   const bubbleColor = useMemo(
     () => parseWallpaper(wallpaper)?.bubble ?? null,

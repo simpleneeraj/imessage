@@ -19,7 +19,12 @@ import { EXPRESSIONS, paletteById, type Expression } from '@/lib/expressions';
 import type { Message, VibeId } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { IoIosDocument, IoIosHeart, IoIosImages } from 'react-icons/io';
+import {
+  IoIosDocument,
+  IoIosHeart,
+  IoIosHeartEmpty,
+  IoIosImages,
+} from 'react-icons/io';
 
 type Staged = { file: File; viewOnce: boolean; previewUrl: string | null };
 
@@ -176,7 +181,7 @@ export function Composer({
   }
 
   return (
-    <div className="shrink-0 bg-(--chat-bg) px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5">
+    <div className="shrink-0 bg-sidebar/85 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl">
       <div className="mx-auto w-full max-w-2xl">
         {error && (
           <p className="px-1 pb-1 text-[12px] text-destructive">{error}</p>
@@ -290,8 +295,9 @@ export function Composer({
                 }
                 render={
                   <Button
+                    variant={'ghost'}
                     size={'icon'}
-                    className="backdrop-blur-lg rounded-full bg-muted text-muted-foreground disabled:opacity-40"
+                    className="rounded-full bg-muted text-primary backdrop-blur-lg disabled:opacity-40 border border-primary dark:border-none"
                   />
                 }
               >
@@ -429,12 +435,13 @@ export function Composer({
                 }
                 render={
                   <Button
+                    variant={'ghost'}
                     size={'icon'}
-                    className="backdrop-blur-lg rounded-full bg-muted text-muted-foreground disabled:opacity-40"
+                    className="rounded-full bg-muted text-primary! backdrop-blur-lg disabled:opacity-40 border border-primary dark:border-none"
                   />
                 }
               >
-                <IoIosHeart className="size-5 text-rose-500" />
+                <IoIosHeartEmpty className="size-5" />
               </MenuTrigger>
               <MenuPopup
                 align="end"

@@ -98,7 +98,7 @@ export function ChatHeader({
           </span>
         </button>
 
-        <div className="flex items-center justify-end gap-4">
+        <div className="flex items-center justify-end gap-4 pr-1 sm:pr-0">
           {callPeer && (
             <Menu>
               <MenuTrigger
