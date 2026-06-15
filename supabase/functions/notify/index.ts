@@ -66,13 +66,12 @@ Deno.serve(async (req) => {
         return { ok: true, status: r.statusCode };
       } catch (err) {
         const status = (err as { statusCode?: number })?.statusCode;
-        // 404/410 = the subscription expired; drop it so we stop trying.
-        if (status === 404 || status === 410) {
-          await supabase
-            .from('push_subscriptions')
-            .delete()
-            .eq('endpoint', s.endpoint);
-        }
+        // NOTE: we deliberately do NOT delete on 404/410 here. In a TWA the FCM
+        // endpoint can return a transient 410 right after the app reopens / the
+        // SW restarts, and eagerly deleting wiped a still-good subscription
+        // (the user then silently stopped receiving everything). A genuinely
+        // re-subscribed device replaces its row via save_push_subscription
+        // (delete-by-endpoint), so stale rows get reclaimed naturally.
         return { ok: false, status, error: (err as Error)?.message };
       }
     }),

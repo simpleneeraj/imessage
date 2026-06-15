@@ -251,7 +251,6 @@
   --sidebar-ring: #4a4238;
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -270,38 +269,6 @@
   }
 }
 
-/*
- * iMessage bubble tails — clip-path pseudo filled with the bubble colour.
- * Renders cleanly over grain wash, wallpapers, and every palette.
- */
-.tail {
-  position: relative;
-}
-
-.tail-out::after {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  bottom: 0;
-  right: -9px;
-  width: 14px;
-  height: 18px;
-  background: var(--bubble-bg);
-  clip-path: path('M0 0 C0 10 4 16 14 18 C8 16 2 13 0 7 Z');
-}
-
-.tail-in::after {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  bottom: 0;
-  left: -9px;
-  width: 14px;
-  height: 18px;
-  background: var(--color-muted);
-  clip-path: path('M14 0 C14 10 10 16 0 18 C6 16 12 13 14 7 Z');
-}
-
 /* iOS hairline separators (0.5px on retina) */
 .hairline-b {
   box-shadow: inset 0 -0.5px 0 var(--color-border);
@@ -312,20 +279,6 @@
   --chat-bg: transparent;
 }
 
-/* Default chat canvas: faint accent glow + soft-light noise grain. */
-.chat-canvas {
-  background-color: var(--chat-bg);
-  background-image:
-    radial-gradient(
-      150% 95% at 50% -25%,
-      color-mix(in oklab, var(--bubble-bg) 11%, transparent),
-      transparent 55%
-    ),
-    url('https://assets.aceternity.com/noise.webp');
-  background-repeat: no-repeat, repeat;
-  background-size: auto, 200px;
-  background-blend-mode: normal, soft-light;
-}
 .has-wallpaper .chat-canvas,
 .vanish .chat-canvas {
   background-image: none;

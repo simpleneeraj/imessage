@@ -28,12 +28,27 @@ function urlBase64ToBuffer(base64: string): ArrayBuffer {
   return buf;
 }
 
+// Resolve to the active SW registration, registering it if AuthProvider hasn't
+// yet. Using navigator.serviceWorker.ready (not getRegistration, which is null
+// until activation) avoids the race where the toggle reads its state before the
+// worker is live and wrongly reports "off".
+async function activeRegistration(): Promise<ServiceWorkerRegistration> {
+  if (!(await navigator.serviceWorker.getRegistration())) {
+    await navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+  return navigator.serviceWorker.ready;
+}
+
 /** Is this device currently subscribed (and permission granted)? */
 export async function isPushEnabled(): Promise<boolean> {
   if (!isPushSupported() || Notification.permission !== 'granted') return false;
-  const reg = await navigator.serviceWorker.getRegistration();
-  const sub = await reg?.pushManager.getSubscription();
-  return Boolean(sub);
+  try {
+    const reg = await activeRegistration();
+    const sub = await reg.pushManager.getSubscription();
+    return Boolean(sub);
+  } catch {
+    return false;
+  }
 }
 
 export type EnableResult =
@@ -58,10 +73,7 @@ export async function enablePush(): Promise<EnableResult> {
   if (permission !== 'granted') return 'denied';
 
   try {
-    const reg =
-      (await navigator.serviceWorker.getRegistration()) ??
-      (await navigator.serviceWorker.register('/sw.js'));
-    await navigator.serviceWorker.ready;
+    const reg = await activeRegistration();
 
     const sub =
       (await reg.pushManager.getSubscription()) ??
