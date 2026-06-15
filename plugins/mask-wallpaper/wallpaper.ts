@@ -34,6 +34,7 @@ export class MaskWallpaper {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private pattern: HTMLDivElement | null;
+  private overlay: HTMLDivElement | null = null;
 
   constructor(
     private container?: HTMLElement,
@@ -297,6 +298,11 @@ export class MaskWallpaper {
       this.container.appendChild(this.pattern);
     }
 
+    this.overlay = document.createElement('div');
+    this.overlay.setAttribute('aria-hidden', 'true');
+    this.overlay.style.cssText = 'pointer-events:none;position:absolute;inset:0;background:var(--wallpaper-overlay)';
+    this.container.appendChild(this.overlay);
+
     this.animate(this.options.animate);
     this.updateTails(this.options.tails);
     this.updateColors(this.options.colors);
@@ -315,6 +321,8 @@ export class MaskWallpaper {
       this.animate(false);
       this.canvas.remove();
       this.pattern?.remove();
+      this.overlay?.remove();
+      this.overlay = null;
       this.hc.remove();
       this.frames = [];
     }

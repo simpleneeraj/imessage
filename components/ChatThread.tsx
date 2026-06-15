@@ -250,13 +250,10 @@ function ChatThreadInner({
       }
     >
       {!vanish && wallpaperOptions && (
-        <>
-          <MaskWallpaper
-            options={wallpaperOptions}
-            className="pointer-events-none absolute inset-0 z-0 h-full w-full"
-          />
-          <div className="pointer-events-none absolute inset-0 z-0" style={{ background: 'var(--wallpaper-overlay)' }} />
-        </>
+        <MaskWallpaper
+          options={wallpaperOptions}
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full"
+        />
       )}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <ChatHeader
