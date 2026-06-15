@@ -16,15 +16,40 @@ self.addEventListener('push', (event) => {
   }
   const title = data.title || 'New message';
   const origin = self.location.origin;
+  const url = data.url || '/chats';
   const options = {
     body: data.body || '',
     icon: origin + '/logo/icon-192.png',
     badge: origin + '/logo/badge-96.png',
-    tag: data.tag || data.url || 'message',
+    tag: data.tag || url || 'message',
     renotify: true,
-    data: { url: data.url || '/chats' },
+    data: { url },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    (async () => {
+      // Skip the popup if the app is already open, focused, and viewing this
+      // exact conversation — the message is already on screen via realtime, so
+      // a notification would just be noise. (userVisibleOnly permits skipping
+      // while a client window is visible.)
+      const windows = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      const viewingThisChat = windows.some((c) => {
+        try {
+          return (
+            c.visibilityState === 'visible' &&
+            c.focused &&
+            new URL(c.url).pathname === url
+          );
+        } catch {
+          return false;
+        }
+      });
+      if (viewingThisChat) return;
+      await self.registration.showNotification(title, options);
+    })(),
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
