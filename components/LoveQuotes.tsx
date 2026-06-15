@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { IoHeart, IoHeartOutline, IoMailOutline, IoSearch } from 'react-icons/io5';
+import { motion } from 'motion/react';
 import Logo from './logo';
 import { siteConfig } from '@/lib/site-config';
 import { likedQuotesAtom } from '@/lib/store/likes';
 import { likeCount, type Quote } from '@/lib/quotes-data';
 import type { QuotesData } from '@/lib/quotes/sources';
+import pkg from '@/package.json';
 
 // Public face of the app: a Goodreads-style quotes page. Quotes are aggregated
 // server-side (SSR) and passed in. The chat is reachable only via the secret
@@ -124,12 +126,32 @@ export function LoveQuotes({ data }: { data: QuotesData }) {
     setEmail('');
   }
 
+  // Double-tap logo secretly redirects to chats, single tap scrolls to top
+  const lastTapRef = useRef(0);
+  function handleLogoTap() {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      router.push('/chats');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    lastTapRef.current = now;
+  }
+
   return (
     <div className="min-h-dvh bg-[#f4f1ea] text-[#382110]">
       {/* Masthead */}
       <header className="sticky top-0 z-10 border-b border-[#e0d8c4] bg-[#f4f1ea]/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <Logo size="lg" parts={[...siteConfig.logoParts]} />
+          <motion.span
+            onClick={handleLogoTap}
+            className="cursor-pointer select-none"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+          >
+            <Logo size="lg" parts={[...siteConfig.logoParts]} />
+          </motion.span>
           <div className="ml-auto flex min-w-0 flex-1 items-center gap-2 rounded-md border border-[#d6cdb8] bg-white px-2.5 py-1.5 sm:max-w-xs">
             <IoSearch className="size-4 shrink-0 text-[#9b8e79]" />
             <input
@@ -249,7 +271,7 @@ export function LoveQuotes({ data }: { data: QuotesData }) {
       <footer className="border-t border-[#e0d8c4] py-6 text-center text-[12px] text-[#9b8e79]">
         <p>Quotes provided by the ZenQuotes &amp; API Ninjas APIs.</p>
         <p className="mt-1">
-          © {new Date().getFullYear()} {siteConfig.name}
+          © {new Date().getFullYear()} {siteConfig.name} • v{pkg.version}
         </p>
       </footer>
     </div>
