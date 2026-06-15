@@ -9,7 +9,7 @@ import {
 } from '@/lib/push';
 
 // Manages this device's Web Push subscription state for the settings toggle.
-export function usePush(userId: string) {
+export function usePush() {
   const [supported] = useState(isPushSupported);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -28,7 +28,7 @@ export function usePush(userId: string) {
         setEnabled(false);
         return;
       }
-      const result = await enablePush(userId);
+      const result = await enablePush();
       if (result === 'ok') {
         setEnabled(true);
       } else if (typeof window !== 'undefined') {
@@ -45,7 +45,7 @@ export function usePush(userId: string) {
     } finally {
       setBusy(false);
     }
-  }, [busy, enabled, userId]);
+  }, [busy, enabled]);
 
   return { supported, enabled, busy, toggle };
 }

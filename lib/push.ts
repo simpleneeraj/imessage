@@ -44,7 +44,7 @@ export type EnableResult =
   | 'error';
 
 /** Request permission, subscribe, and persist the subscription. */
-export async function enablePush(userId: string): Promise<EnableResult> {
+export async function enablePush(): Promise<EnableResult> {
   if (!isPushSupported()) return 'unsupported';
   if (!VAPID_PUBLIC_KEY) return 'no-vapid';
 
@@ -65,15 +65,13 @@ export async function enablePush(userId: string): Promise<EnableResult> {
       }));
 
     const json = sub.toJSON();
-    const { error } = await supabase.from('push_subscriptions').upsert(
-      {
-        user_id: userId,
-        endpoint: sub.endpoint,
-        p256dh: json.keys?.p256dh ?? '',
-        auth: json.keys?.auth ?? '',
-      },
-      { onConflict: 'endpoint' },
-    );
+    // Reassign this browser's endpoint to the current account (handles two
+    // accounts sharing one browser, which RLS would otherwise block).
+    const { error } = await supabase.rpc('save_push_subscription', {
+      p_endpoint: sub.endpoint,
+      p_p256dh: json.keys?.p256dh ?? '',
+      p_auth: json.keys?.auth ?? '',
+    });
     return error ? 'error' : 'ok';
   } catch {
     return 'error';

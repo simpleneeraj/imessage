@@ -30,7 +30,7 @@ export function HeaderMenu() {
   const { logout, profile } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const { palette, isDark, setPalette, toggleMode } = useAppTheme();
-  const push = usePush(profile.id);
+  const push = usePush();
 
   return (
     <>

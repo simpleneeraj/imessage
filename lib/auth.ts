@@ -11,6 +11,7 @@ import {
   generateIdentityKeyPair,
 } from './crypto';
 import slugify from 'slugify';
+import { disablePush } from './push';
 import type { Profile } from './types';
 
 // Synthetic domain for username->email mapping. Must pass GoTrue's email
@@ -237,6 +238,13 @@ export async function authenticate(
 
 export async function signOut(): Promise<void> {
   clearKeyCache();
+  // Free this browser's push subscription while still authenticated, so the
+  // next account to sign in here can claim the endpoint cleanly.
+  try {
+    await disablePush();
+  } catch {
+    // non-fatal
+  }
   try {
     await supabase.auth.signOut();
   } catch {
