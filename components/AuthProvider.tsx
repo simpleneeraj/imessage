@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { idb } from '@/lib/idb';
 import { wireOutbox } from '@/lib/outbox';
 import { getPrivateKey } from '@/lib/keys';
+import { refreshPushSubscription } from '@/lib/push';
 import { signOut } from '@/lib/auth';
 import type { Profile } from '@/lib/types';
 import { AuthGate } from './AuthGate';
@@ -60,6 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.realtime.setAuth();
         setProfile(localProfile);
         setPhase('ready');
+        // Re-mint a fresh push subscription so a device whose endpoint expired
+        // (410) silently recovers on reopen instead of staying dark.
+        void refreshPushSubscription();
       } else {
         await supabase.auth.signOut();
         setPhase('gate');

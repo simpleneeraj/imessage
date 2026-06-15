@@ -142,7 +142,7 @@ export function ConversationList() {
       <header className="shrink-0 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="flex items-center justify-between">
           <h1 className="text-[34px] font-bold font-heading tracking-tight">
-            <Logo parts={parts} />
+            <Logo size="lg" parts={parts} />
           </h1>
           <div className="flex items-center">
             <HeaderMenu />

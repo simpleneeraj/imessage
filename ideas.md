@@ -28,3 +28,7 @@ Video/Audio Calling + Voice Messages feature + @mention peoples
 claude --resume 554123c1-8fba-4356-a11d-8b2d8aaa2a05
 
 claude --resume 554123c1-8fba-4356-a11d-8b2d8aaa2a05
+
+1. When click on image it should zoom
+2. I can share the voice notes as well
+3. Voice and video call not working
