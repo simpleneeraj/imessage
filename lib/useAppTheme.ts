@@ -1,7 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { parseTheme, type PaletteId, type ThemeMode } from './themes';
+import { THEMES, parseTheme, type PaletteId, type ThemeMode } from './themes';
 
 // Thin wrapper over next-themes that splits the combined theme id into a palette
 // + light/dark mode, so components get a clean two-dimension API while a single
@@ -15,6 +16,15 @@ export function useAppTheme(): {
 } {
   const { theme, setTheme } = useTheme();
   const { palette, mode } = parseTheme(theme);
+
+  // Migrate stale theme IDs (e.g. imessage-dark, neutral-light) left in
+  // localStorage from before the Goodreads palette migration.
+  useEffect(() => {
+    if (theme && !THEMES.includes(theme)) {
+      setTheme(`${palette}-${mode}`);
+    }
+  }, [theme, palette, mode, setTheme]);
+
   return {
     palette,
     mode,
