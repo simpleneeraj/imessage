@@ -368,7 +368,7 @@ export function MessageBubble({
                 : 'px-3.5 py-1.75 whitespace-pre-wrap wrap-anywhere',
               mine
                 ? 'text-white [background:var(--bubble-bg)]'
-                : 'bg-muted text-foreground',
+                : 'bg-(--muted) text-foreground',
               isLastInGroup && !children && 'tail',
               isLastInGroup && !children && (mine ? 'tail-out' : 'tail-in'),
               pending && 'opacity-60',
