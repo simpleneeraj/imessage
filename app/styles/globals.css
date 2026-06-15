@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 @import './mask-wallpaper.css';
 
-/* Dark mode is any of the combined "<palette>-dark" theme classes. */
-@custom-variant dark (&:is(.imessage-dark *, .neutral-dark *, .anthropic-dark *, .beige-dark *));
+/* Dark mode is the combined "goodreads-dark" theme class. */
+@custom-variant dark (&:is(.goodreads-dark *));
 
 @theme inline {
   --font-sans: var(--font-sans);
@@ -166,21 +166,21 @@
   --chat-bg: var(--background);
   /* Outgoing bubble fill — supports gradients; per-chat override via inline style. */
   --bubble-bg: var(--color-primary);
-  /* iMessage light palette */
-  --background: #ffffff;
-  --foreground: var(--color-neutral-800);
+  /* Goodreads light palette */
+  --background: #f4f1ea;
+  --foreground: #382110;
   --card: #ffffff;
-  --card-foreground: var(--color-neutral-800);
+  --card-foreground: #382110;
   --popover: #ffffff;
-  --popover-foreground: var(--color-neutral-800);
-  --primary: #007aff;
+  --popover-foreground: #382110;
+  --primary: #00635d;
   --primary-foreground: #ffffff;
   --secondary: --alpha(var(--color-black) / 4%);
-  --secondary-foreground: var(--color-neutral-800);
-  --muted: #e9e9eb;
-  --muted-foreground: #8e8e93;
-  --accent: --alpha(var(--color-black) / 4%);
-  --accent-foreground: var(--color-neutral-800);
+  --secondary-foreground: #382110;
+  --muted: #ece3d2;
+  --muted-foreground: #7a6a55;
+  --accent: #efe9da;
+  --accent-foreground: #382110;
   --destructive: var(--color-red-500);
   --destructive-foreground: var(--color-red-700);
   --info: var(--color-blue-500);
@@ -189,41 +189,37 @@
   --success-foreground: var(--color-emerald-700);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
-  --border: #c6c6c8;
-  --input: --alpha(var(--color-black) / 10%);
-  --ring: #c7c7cc;
-  --sidebar: #f7f7f7;
-  --sidebar-foreground: var(--color-neutral-800);
-  --sidebar-primary: #007aff;
+  --border: #d6cdb8;
+  --input: --alpha(var(--color-black) / 8%);
+  --ring: #cdc3ad;
+  --sidebar: #ebe6da;
+  --sidebar-foreground: #382110;
+  --sidebar-primary: #00635d;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: --alpha(var(--color-black) / 4%);
-  --sidebar-accent-foreground: var(--color-neutral-800);
-  --sidebar-border: #c6c6c8;
-  --sidebar-ring: #c7c7cc;
+  --sidebar-accent: #efe9da;
+  --sidebar-accent-foreground: #382110;
+  --sidebar-border: #d6cdb8;
+  --sidebar-ring: #cdc3ad;
 }
 
-.imessage-dark {
+.goodreads-dark {
   color-scheme: dark;
-  --chat-bg: #000000;
-  --bubble-bg: #0a84ff;
-  --background: color-mix(
-    in srgb,
-    var(--color-neutral-950) 95%,
-    var(--color-white)
-  );
-  --foreground: var(--color-neutral-100);
-  --card: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --card-foreground: var(--color-neutral-100);
-  --popover: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --popover-foreground: var(--color-neutral-100);
-  --primary: #0a84ff;
+  --chat-bg: #181612;
+  --bubble-bg: #00635d;
+  --background: #1c1a14;
+  --foreground: #ece5d6;
+  --card: #232018;
+  --card-foreground: #ece5d6;
+  --popover: #232018;
+  --popover-foreground: #ece5d6;
+  --primary: #00867f;
   --primary-foreground: #ffffff;
   --secondary: --alpha(var(--color-white) / 4%);
-  --secondary-foreground: var(--color-neutral-100);
-  --muted: #3b3b3d;
-  --muted-foreground: #98989f;
-  --accent: --alpha(var(--color-white) / 4%);
-  --accent-foreground: var(--color-neutral-100);
+  --secondary-foreground: #ece5d6;
+  --muted: #2e2a22;
+  --muted-foreground: #a59c8a;
+  --accent: --alpha(var(--color-white) / 6%);
+  --accent-foreground: #ece5d6;
   --destructive: color-mix(
     in srgb,
     var(--color-red-500) 90%,
@@ -236,150 +232,19 @@
   --success-foreground: var(--color-emerald-400);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-400);
-  --border: #38383a;
+  --border: #3d3428;
   --input: --alpha(var(--color-white) / 8%);
-  --ring: #48484a;
-  --sidebar: #1c1c1e;
-  --sidebar-foreground: color-mix(
-    in srgb,
-    var(--color-neutral-100) 64%,
-    var(--sidebar)
-  );
-  --sidebar-primary: #0a84ff;
+  --ring: #4a4238;
+  --sidebar: #18160f;
+  --sidebar-foreground: #ece5d6;
+  --sidebar-primary: #00867f;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: --alpha(var(--color-white) / 4%);
-  --sidebar-accent-foreground: var(--color-neutral-100);
-  --sidebar-border: #38383a;
-  --sidebar-ring: #48484a;
+  --sidebar-accent-foreground: #ece5d6;
+  --sidebar-border: #3d3428;
+  --sidebar-ring: #4a4238;
 }
 
-/* ===================================================================
-   Colour palettes — selected via the combined "<palette>-<mode>" class
-   next-themes sets on <html>. iMessage = :root / .imessage-dark above.
-   =================================================================== */
-
-/* ---------- Neutral: monochrome, no hue ---------- */
-.neutral-light {
-  --bubble-bg: #1f1f22;
-  --chat-bg: #ffffff;
-  --background: #ffffff;
-  --foreground: #1f1f22;
-  --primary: #1f1f22;
-  --primary-foreground: #ffffff;
-  --muted: #ececee;
-  --muted-foreground: #8a8a8e;
-  --accent: #f0f0f1;
-  --accent-foreground: #1f1f22;
-  --border: --alpha(var(--color-black) / 8%);
-  --ring: #c2c2c6;
-  --card: #ffffff;
-  --popover: #ffffff;
-  --sidebar: #f6f6f6;
-  --sidebar-border: --alpha(var(--color-black) / 8%);
-  --sidebar-ring: #c2c2c6;
-}
-.neutral-dark {
-  color-scheme: dark;
-  --bubble-bg: #5a5a5f;
-  --chat-bg: #000000;
-  --background: #0a0a0b;
-  --foreground: #f2f2f3;
-  --primary: #5a5a5f;
-  --primary-foreground: #1f1f22;
-  --muted: #2a2a2c;
-  --muted-foreground: #98989d;
-  --accent: --alpha(var(--color-white) / 6%);
-  --accent-foreground: #f2f2f3;
-  --border: #38383a;
-  --ring: #48484a;
-  --card: #141416;
-  --popover: #141416;
-  --sidebar: #161618;
-  --sidebar-border: #38383a;
-  --sidebar-ring: #48484a;
-}
-
-/* ---------- Anthropic: warm cream + Claude coral ---------- */
-.anthropic-light {
-  --bubble-bg: #b45736;
-  --chat-bg: #faf9f5;
-  --background: #faf9f5;
-  --foreground: #3d3a34;
-  --primary: #b45736;
-  --primary-foreground: #ffffff;
-  --muted: #ebe7dd;
-  --muted-foreground: #84817a;
-  --accent: #efe9dd;
-  --accent-foreground: #3d3a34;
-  --border: color-mix(in srgb, #3d3a34 10%, transparent);
-  --ring: #cbc7ba;
-  --card: #fffefb;
-  --popover: #fffefb;
-  --sidebar: #f0eee6;
-  --sidebar-border: color-mix(in srgb, #3d3a34 8%, transparent);
-  --sidebar-ring: #cbc7ba;
-}
-.anthropic-dark {
-  color-scheme: dark;
-  --bubble-bg: #b45736;
-  --chat-bg: #262624;
-  --background: #1f1d1b;
-  --foreground: #ece7da;
-  --primary: #e08763;
-  --primary-foreground: #241f1a;
-  --muted: #36322c;
-  --muted-foreground: #9a958a;
-  --accent: --alpha(var(--color-white) / 6%);
-  --accent-foreground: #ece7da;
-  --border: #393530;
-  --ring: #4d4840;
-  --card: #2a2724;
-  --popover: #2a2724;
-  --sidebar: #242120;
-  --sidebar-border: #393530;
-  --sidebar-ring: #4d4840;
-}
-
-/* ---------- Sand: soft warm tan, bronze accent ---------- */
-.beige-light {
-  --bubble-bg: #9a6a3b;
-  --chat-bg: #f7f2e8;
-  --background: #f7f2e8;
-  --foreground: #3a342a;
-  --primary: #9a6a3b;
-  --primary-foreground: #ffffff;
-  --muted: #ece3d2;
-  --muted-foreground: #7c7363;
-  --accent: #ece3d2;
-  --accent-foreground: #3a342a;
-  --border: color-mix(in srgb, #3a342a 10%, transparent);
-  --ring: #cdc3ad;
-  --card: #fdfaf3;
-  --popover: #fdfaf3;
-  --sidebar: #f0eadc;
-  --sidebar-border: color-mix(in srgb, #3a342a 8%, transparent);
-  --sidebar-ring: #cdc3ad;
-}
-.beige-dark {
-  color-scheme: dark;
-  --bubble-bg: #a06e3c;
-  --chat-bg: #1d1b17;
-  --background: #1d1b17;
-  --foreground: #ece5d6;
-  --primary: #c79256;
-  --primary-foreground: #221d16;
-  --muted: #34302a;
-  --muted-foreground: #a59c8a;
-  --accent: --alpha(var(--color-white) / 6%);
-  --accent-foreground: #ece5d6;
-  --border: #353027;
-  --ring: #4a4338;
-  --card: #282520;
-  --popover: #282520;
-  --sidebar: #211e19;
-  --sidebar-border: #353027;
-  --sidebar-ring: #4a4338;
-}
 
 @layer base {
   * {

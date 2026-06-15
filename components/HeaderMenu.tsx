@@ -12,11 +12,8 @@ import {
 } from 'react-icons/io5';
 import {
   Menu,
-  MenuGroupLabel,
   MenuItem,
   MenuPopup,
-  MenuRadioGroup,
-  MenuRadioItem,
   MenuSeparator,
   MenuTrigger,
 } from '@/components/ui/menu';
@@ -24,12 +21,11 @@ import { useAuth } from './AuthProvider';
 import { ProfileEditor } from './ProfileEditor';
 import { useAppTheme } from '@/lib/useAppTheme';
 import { usePush } from '@/hooks/usePush';
-import { PALETTES, type PaletteId } from '@/lib/themes';
 
 export function HeaderMenu() {
   const { logout, profile } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
-  const { palette, isDark, setPalette, toggleMode } = useAppTheme();
+  const { isDark, toggleMode } = useAppTheme();
   const push = usePush();
 
   return (
@@ -82,18 +78,6 @@ export function HeaderMenu() {
               {push.enabled ? 'Turn Off Notifications' : 'Turn On Notifications'}
             </MenuItem>
           )}
-          <MenuSeparator />
-          <MenuRadioGroup
-            value={palette}
-            onValueChange={(v) => setPalette(v as PaletteId)}
-          >
-            <MenuGroupLabel>Theme</MenuGroupLabel>
-            {PALETTES.map((p) => (
-              <MenuRadioItem key={p.id} value={p.id}>
-                {p.label}
-              </MenuRadioItem>
-            ))}
-          </MenuRadioGroup>
           <MenuSeparator />
           <MenuItem className="cursor-pointer" onClick={() => void logout()}>
             <IoLogOutOutline className="size-4" />
