@@ -28,7 +28,7 @@ export function TypingIndicator({
       data-testid="typing-indicator"
     >
       {isGroup && first && (
-        <div className="mb-0.5 pl-12 text-[11px] text-imsg-text-gray">
+        <div className="mb-0.5 pl-12 text-[11px] text-muted-foreground">
           {typingLabel(typists)}
         </div>
       )}
@@ -42,7 +42,7 @@ export function TypingIndicator({
         ) : (
           <div className="mr-2 w-7 shrink-0" aria-hidden />
         )}
-        <div className="tail tail-in rounded-[18px] bg-imsg-gray px-4 py-3">
+        <div className="tail tail-in rounded-[18px] bg-muted px-4 py-3">
           <div className="relative z-2 flex gap-1">
             {[0, 1, 2].map((i) => (
               <motion.span
@@ -54,7 +54,7 @@ export function TypingIndicator({
                   delay: i * 0.18,
                   ease: "easeInOut",
                 }}
-                className="size-2 rounded-full bg-imsg-text-gray"
+                className="size-2 rounded-full bg-muted-foreground"
               />
             ))}
           </div>

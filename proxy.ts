@@ -8,9 +8,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except static assets, the service worker, and images,
-  // so token refresh covers all real navigations and data routes.
+  // Run on everything except static assets and images, so token refresh covers
+  // all real navigations and data routes.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icon-.*\\.png|.*\\.svg).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon-.*\\.png|.*\\.svg).*)",
   ],
 };

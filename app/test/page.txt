@@ -1,0 +1,20 @@
+import React from 'react';
+
+type TestProps = {};
+
+const Test: React.FC<TestProps> = ({}) => {
+  return (
+    <div>
+      <h1
+        className="font-alice"
+        style={{
+          fontFamily: 'var(--font-alice)',
+        }}
+      >
+        f
+      </h1>
+    </div>
+  );
+};
+
+export default Test;

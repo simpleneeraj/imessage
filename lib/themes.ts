@@ -7,8 +7,6 @@
 export const PALETTES = [
   { id: 'imessage', label: 'Cobalt' },
   { id: 'neutral', label: 'Graphite' },
-  { id: 'anthropic', label: 'Clay' },
-  { id: 'royal', label: 'Amethyst' },
   { id: 'beige', label: 'Sand' },
 ] as const;
 
@@ -17,13 +15,17 @@ export type ThemeMode = 'light' | 'dark';
 
 export const DEFAULT_THEME = 'imessage-light';
 
-export const THEMES = PALETTES.flatMap((p) => [`${p.id}-light`, `${p.id}-dark`]);
+export const THEMES = PALETTES.flatMap((p) => [
+  `${p.id}-light`,
+  `${p.id}-dark`,
+]);
 
 export function parseTheme(theme: string | undefined): {
   palette: PaletteId;
   mode: ThemeMode;
 } {
   const [p, m] = (theme ?? DEFAULT_THEME).split('-');
-  const palette = (PALETTES.find((x) => x.id === p)?.id ?? 'imessage') as PaletteId;
+  const palette = (PALETTES.find((x) => x.id === p)?.id ??
+    'imessage') as PaletteId;
   return { palette, mode: m === 'dark' ? 'dark' : 'light' };
 }

@@ -8,7 +8,9 @@ import { supabase } from '@/lib/supabase';
 import { idb } from '@/lib/idb';
 import { encryptAndUpload } from '@/lib/attachments';
 import { useAuth } from './AuthProvider';
-import { useMessages } from '@/lib/useMessages';
+import { useMessages } from '@/hooks/useMessages';
+import { useEvents } from '@/hooks/useEvents';
+import { useConversationActions } from '@/hooks/useConversationActions';
 import type { Conversation, Message, Profile } from '@/lib/types';
 import { ChatHeader } from './ChatHeader';
 import { MessageList } from './MessageList';
@@ -17,24 +19,19 @@ import { OfflineBanner } from './OfflineBanner';
 import { ChatDetails } from './ChatDetails';
 import { ThemePicker } from './ThemePicker';
 import { Celebration } from './Celebration';
-import { LockScreen } from './LockScreen';
-import { PasscodeDialog } from './PasscodeDialog';
 import type { Expression } from '@/lib/expressions';
 import MaskWallpaper from '@/plugins/mask-wallpaper';
 import { parseWallpaper, wallpaperOptionsFor } from '@/utils/config';
-import { bubbleSolid } from '@/utils/themes';
-import { useEvents } from '@/lib/useEvents';
 
 type ConversationRow = Omit<Conversation, 'participants'> & {
   conversation_participants: {
     user_id: string;
     nickname: string | null;
-    passcode_hash: string | null;
     profiles: Profile;
   }[];
 };
 
-function useConversation(id: string, me: string): Conversation | null {
+function useConversation(id: string): Conversation | null {
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
   useEffect(() => {
@@ -49,7 +46,7 @@ function useConversation(id: string, me: string): Conversation | null {
       void supabase
         .from('conversations')
         .select(
-          '*, conversation_participants(user_id, nickname, passcode_hash, profiles(*))',
+          '*, conversation_participants(user_id, nickname, profiles(*))',
         )
         .eq('id', id)
         .maybeSingle()
@@ -59,23 +56,17 @@ function useConversation(id: string, me: string): Conversation | null {
             data as ConversationRow;
           const fresh = {
             ...conv,
-            // nicknames override display everywhere inside the chat
             participants: conversation_participants.map((p) => ({
               ...p.profiles,
               nickname: p.nickname,
               display_name: p.nickname ?? p.profiles.display_name,
             })),
-            myPasscodeHash:
-              conversation_participants.find((p) => p.user_id === me)
-                ?.passcode_hash ?? null,
           };
           setConversation(fresh);
           void idb.putAll('conversations', [fresh]);
         });
     load();
 
-    // vanish/vibe/wallpaper arrive as conversation UPDATEs; membership and
-    // nickname changes arrive as audit-event INSERTs → refetch participants.
     const channel = supabase
       .channel(`conv-meta:${id}`)
       .on(
@@ -108,72 +99,17 @@ function useConversation(id: string, me: string): Conversation | null {
       cancelled = true;
       void supabase.removeChannel(channel);
     };
-  }, [id, me]);
+  }, [id]);
 
   return conversation;
 }
 
-// Outer gate: while a passcode lock is active, the message UI is NEVER
-// mounted — no fetch, no decrypt, no composer — so stripping the lock screen
-// from the DOM reveals nothing and can't send messages.
-export function ChatThread({
-  id,
-  initialPasscodeHash = null,
-  initialTitle = '',
-}: {
-  id: string;
-  // Resolved server-side so a locked chat renders the LockScreen on first
-  // paint; the client lookup below reconciles once the conversation loads.
-  initialPasscodeHash?: string | null;
-  initialTitle?: string;
-}) {
+export function ChatThread({ id }: { id: string }) {
   const { userId } = useAuth();
-  const conversation = useConversation(id, userId);
-
-  const [unlocked, setUnlocked] = useState(false);
-  // local override so set/remove in this session applies without a refetch
-  const [hashOverride, setHashOverride] = useState<string | null | undefined>(
-    undefined,
-  );
-  const myPasscodeHash =
-    hashOverride !== undefined
-      ? hashOverride
-      : conversation
-        ? (conversation.myPasscodeHash ?? null)
-        : initialPasscodeHash;
-  const locked = Boolean(myPasscodeHash) && !unlocked;
-
-  const others = conversation?.participants.filter((p) => p.id !== userId) ?? [];
-  const title = !conversation
-    ? initialTitle
-    : conversation.is_group
-      ? (conversation.name ?? `${others.length} People`)
-      : (others[0]?.display_name ?? 'Chat');
-
-  if (locked && myPasscodeHash) {
-    return (
-      <div className="relative flex h-full min-h-0 flex-col bg-(--imsg-chat-bg)">
-        <LockScreen
-          conversationId={id}
-          passcodeHash={myPasscodeHash}
-          title={title || 'This chat'}
-          onUnlock={() => setUnlocked(true)}
-        />
-      </div>
-    );
-  }
+  const conversation = useConversation(id);
 
   return (
-    <ChatThreadInner
-      id={id}
-      userId={userId}
-      conversation={conversation}
-      myPasscodeHash={myPasscodeHash}
-      onPasscodeChange={(hash) => {
-        setHashOverride(hash);
-        setUnlocked(true); // setting a code mustn't lock you out mid-session
-      }}
-    />
+    <ChatThreadInner id={id} userId={userId} conversation={conversation} />
   );
 }
 
@@ -181,14 +117,10 @@ function ChatThreadInner({
   id,
   userId,
   conversation,
-  myPasscodeHash,
-  onPasscodeChange,
 }: {
   id: string;
   userId: string;
   conversation: Conversation | null;
-  myPasscodeHash: string | null;
-  onPasscodeChange: (hash: string | null) => void;
 }) {
   const router = useRouter();
   const {
@@ -224,9 +156,6 @@ function ChatThreadInner({
     [conversation, userId],
   );
 
-  const [passcodeOpen, setPasscodeOpen] = useState(false);
-
-  // Celebrations: new expression messages fire a full-screen effect.
   const vibe = conversation?.vibe ?? 'classic';
   const [celebration, setCelebration] = useState<{
     kind: 'hearts' | 'confetti';
@@ -237,7 +166,6 @@ function ChatThreadInner({
   useEffect(() => {
     if (messages.length === 0) return;
     if (!primedRef.current) {
-      // don't celebrate history on first load
       for (const m of messages) seenRef.current.add(m.client_id);
       primedRef.current = true;
       return;
@@ -261,8 +189,6 @@ function ChatThreadInner({
     return () => clearTimeout(t);
   }, [celebration]);
 
-  // Read receipts: mark on open, on refocus, and when new messages arrive
-  // while the thread is visible. (Locked chats never mount this component.)
   useEffect(() => {
     if (document.visibilityState === 'visible') markRead();
     const onVisible = () => {
@@ -272,47 +198,35 @@ function ChatThreadInner({
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [markRead, messages.length]);
 
-  // Vanish mode: when the chat is closed (or the mode is turned off),
-  // ephemeral messages that everyone has read are destroyed for everyone.
+  const actions = useConversationActions(id);
+
   const vanish = conversation?.vanish_mode ?? false;
   useEffect(() => {
     if (!vanish) return;
     const sweep = () => {
-      if (navigator.onLine) {
-        // .then() matters: supabase builders only execute when awaited
-        void supabase.rpc('delete_vanished', { conv: id }).then(() => {});
-      }
+      if (navigator.onLine) actions.deleteVanished();
     };
     window.addEventListener('pagehide', sweep);
     return () => {
       window.removeEventListener('pagehide', sweep);
       sweep();
     };
-  }, [vanish, id]);
+  }, [vanish, actions]);
 
-  // Header action-menu state + handlers (moved out of ChatDetails).
   const isAdmin = conversation?.created_by === userId;
   const deleted = Boolean(conversation?.deleted_at);
 
-  const toggleVanish = () =>
-    void supabase
-      .rpc('set_vanish_mode', { conv: id, enabled: !vanish })
-      .then(() => {});
+  const toggleVanish = () => actions.setVanishMode(!vanish);
 
   const deleteForMe = () => {
-    void supabase.rpc('hide_conversation', { conv: id }).then(() => {});
+    actions.hideConversation();
     router.push('/chats');
   };
   const deleteForEveryone = () => {
-    void supabase
-      .rpc('set_conversation_deleted', { conv: id, deleted: true })
-      .then(() => {});
+    actions.setDeleted(true);
     router.push('/chats');
   };
-  const restore = () =>
-    void supabase
-      .rpc('set_conversation_deleted', { conv: id, deleted: false })
-      .then(() => {});
+  const restore = () => actions.setDeleted(false);
 
   const title = !conversation
     ? ''
@@ -323,16 +237,14 @@ function ChatThreadInner({
   return (
     <div
       className={cn(
-        'relative flex h-full min-h-0 flex-col bg-(--imsg-chat-bg) transition-colors duration-300',
+        'relative flex h-full min-h-0 flex-col bg-(--chat-bg) transition-colors duration-300',
         vanish && 'vanish',
         wallpaperOptions && 'has-wallpaper',
       )}
-      // themed outgoing-bubble fill (solid or gradient); vanish keeps its own palette
       style={
         !vanish && bubbleColor
           ? ({
-              '--imsg-bubble-out': bubbleSolid(bubbleColor),
-              '--imsg-bubble-out-bg': bubbleColor,
+              '--bubble-bg': bubbleColor,
             } as React.CSSProperties)
           : undefined
       }
@@ -343,11 +255,9 @@ function ChatThreadInner({
             options={wallpaperOptions}
             className="pointer-events-none absolute inset-0 z-0 h-full w-full"
           />
-          {/* Scrim: dims the busy pattern so bubbles stay readable. */}
           <div className="pointer-events-none absolute inset-0 z-0 bg-white/45 dark:bg-black/55" />
         </>
       )}
-      {/* Foreground above the wallpaper layer. */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <ChatHeader
           title={title}
@@ -355,8 +265,6 @@ function ChatThreadInner({
           conversationId={id}
           onOpenDetails={() => setDetailsOpen(true)}
           onOpenTheme={() => setThemeOpen(true)}
-          onOpenPasscode={() => setPasscodeOpen(true)}
-          hasPasscode={Boolean(myPasscodeHash)}
           vanish={vanish}
           onToggleVanish={toggleVanish}
           isAdmin={isAdmin}
@@ -372,10 +280,9 @@ function ChatThreadInner({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              // gradient derived from the chat accent so it tracks the theme
               style={{
                 background:
-                  'linear-gradient(to right, color-mix(in oklab, var(--imsg-bubble-out) 45%, #000), var(--imsg-bubble-out), color-mix(in oklab, var(--imsg-bubble-out) 45%, #000))',
+                  'linear-gradient(to right, color-mix(in oklab, var(--bubble-bg) 45%, #000), var(--bubble-bg), color-mix(in oklab, var(--bubble-bg) 45%, #000))',
               }}
               className="shrink-0 overflow-hidden text-center"
             >
@@ -394,7 +301,6 @@ function ChatThreadInner({
           participantsMeta={participantsMeta}
           typingUserIds={typingUserIds}
           events={events}
-          vibe={vibe}
           onReact={(messageId, kind) => void react(messageId, kind)}
           onReply={setReplyingTo}
           onUnsend={(msg) => void unsend(msg)}
@@ -451,20 +357,7 @@ function ChatThreadInner({
         open={themeOpen}
         onOpenChange={setThemeOpen}
         conversation={conversation}
-        onWallpaper={(theme) => {
-          // the conversations UPDATE event syncs the new theme to all members
-          void supabase
-            .rpc('set_wallpaper', { conv: id, theme })
-            .then(() => {});
-        }}
-      />
-
-      <PasscodeDialog
-        open={passcodeOpen}
-        onOpenChange={setPasscodeOpen}
-        conversationId={id}
-        hasPasscode={Boolean(myPasscodeHash)}
-        onChanged={onPasscodeChange}
+        onWallpaper={(theme) => actions.setWallpaper(theme)}
       />
 
       <AnimatePresence>

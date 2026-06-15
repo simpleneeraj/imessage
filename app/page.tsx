@@ -1,18 +1,14 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { CreateSpace } from '@/components/CreateSpace';
+import { LoveQuotes } from '@/components/LoveQuotes';
 
+// Public landing — a plain love-quotes page. The chat is reachable only via the
+// secret door in the footer (triple-tap the ♥) or directly at /chats.
 export const metadata: Metadata = {
-  title: 'Create your space — Monarch',
-  description:
-    'Spin up a private, end-to-end encrypted space for two on its own subdomain.',
+  title: 'Love Quotes',
+  description: 'A small collection of words about love.',
+  robots: { index: false, follow: false },
 };
 
-// Root domain (chat.cutecode.app) → space onboarding.
-// A tenant subdomain (<slug>.chat.cutecode.app) → straight into the app.
-export default async function HomePage() {
-  const slug = (await headers()).get('x-tenant') ?? '';
-  if (slug) redirect('/chats');
-  return <CreateSpace />;
+export default function HomePage() {
+  return <LoveQuotes />;
 }

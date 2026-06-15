@@ -6,7 +6,6 @@ export type Feature =
   | 'vibes'
   | 'gradient_bubbles'
   | 'premium_themes'
-  | 'passcode'
   | 'view_once';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- flag consumed once DodoPayments entitlements land

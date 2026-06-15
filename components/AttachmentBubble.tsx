@@ -103,7 +103,7 @@ export function AttachmentBubble({
         <span
           className={cn(
             "block text-[12px]",
-            mine ? "text-white/70" : "text-imsg-text-gray"
+            mine ? "text-white/70" : "text-muted-foreground"
           )}
         >
           {formatBytes(payload.size)}

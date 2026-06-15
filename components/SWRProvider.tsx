@@ -9,8 +9,8 @@ import { SWRConfig } from 'swr';
 //    page navigation (signOut → window.location), so the cache never survives
 //    an account switch.
 //  - Every cached query still goes through PostgREST with the user's JWT, so RLS
-//    (incl. the tenant-isolation policy) applies to cache fills exactly as to a
-//    direct fetch — caching can't widen what a user is allowed to read.
+//    applies to cache fills exactly as to a direct fetch — caching can't widen
+//    what a user is allowed to read.
 export function SWRProvider({ children }: { children: React.ReactNode }) {
   return (
     <SWRConfig

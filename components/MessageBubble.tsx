@@ -10,7 +10,6 @@ import type {
   Profile,
   Reaction,
   ReactionKind,
-  VibeId,
 } from '@/lib/types';
 import { Avatar } from './Avatar';
 import { ReactionPicker } from './ReactionPicker';
@@ -55,8 +54,6 @@ function ReplyQuote({
   return (
     <button
       type="button"
-      // tapping jumps to the original; stop the press so it doesn't open the
-      // reaction picker or start a swipe on the parent bubble
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation();
@@ -67,19 +64,18 @@ function ReplyQuote({
         className,
       )}
     >
-      {/* rounded accent bar — only the bar is tinted, not the whole strip */}
       <span
         aria-hidden
         className={cn(
           'w-0.75 shrink-0 rounded-full',
-          mine ? 'bg-white/80' : 'bg-imsg-blue',
+          mine ? 'bg-white/80' : 'bg-primary',
         )}
       />
       <div className="min-w-0 flex-1">
         <span
           className={cn(
             'block truncate text-[12px] font-semibold leading-tight',
-            mine ? 'text-white' : 'text-imsg-blue',
+            mine ? 'text-white' : 'text-primary',
           )}
         >
           {name}
@@ -87,7 +83,7 @@ function ReplyQuote({
         <span
           className={cn(
             'flex items-center gap-1 text-[12px] leading-tight',
-            mine ? 'text-white/85' : 'text-imsg-text-gray',
+            mine ? 'text-white/85' : 'text-muted-foreground',
           )}
         >
           {isImage && <IoImage className="size-3 shrink-0" />}
@@ -102,7 +98,6 @@ export function MessageBubble({
   row,
   sender,
   me,
-  vibe = 'classic',
   reactions,
   repliedTo,
   repliedSender,
@@ -116,7 +111,6 @@ export function MessageBubble({
   row: MessageRow;
   sender: Profile | undefined;
   me: string;
-  vibe?: VibeId;
   reactions: Reaction[];
   repliedTo?: Message;
   repliedSender?: Profile;
@@ -147,8 +141,6 @@ export function MessageBubble({
     message.payload?.kind === 'expression' ? message.payload : null;
   const call = message.payload?.kind === 'call' ? message.payload : null;
 
-  // Swipe-to-reply: drag the bubble toward its leading edge to reveal an arrow;
-  // released past the threshold it fires onReply. mine swipes left, others right.
   const SWIPE_THRESHOLD = 56;
   const dragX = useMotionValue(0);
   const arrowOpacity = useTransform(
@@ -165,7 +157,7 @@ export function MessageBubble({
   if (message.deleted_at) {
     return (
       <div className={cn('flex', mine ? 'justify-end' : 'justify-start pl-9')}>
-        <p className="py-1 text-[12px] italic text-imsg-text-gray">
+        <p className="py-1 text-[12px] italic text-muted-foreground">
           {mine
             ? 'You unsent a message.'
             : `${sender?.display_name ?? 'Someone'} unsent a message.`}
@@ -174,7 +166,6 @@ export function MessageBubble({
     );
   }
 
-  // Call record — a centered log row (like iMessage's call entries).
   if (call) {
     const Icon = call.media === 'video' ? IoVideocam : IoCall;
     const kind = call.media === 'video' ? 'Video' : 'Voice';
@@ -190,8 +181,8 @@ export function MessageBubble({
       <div className="my-2 flex justify-center">
         <span
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full bg-imsg-gray/70 px-3 py-1 text-[12px] font-medium backdrop-blur-xs',
-            missed && !mine ? 'text-red-500' : 'text-imsg-text-gray',
+            'inline-flex items-center gap-1.5 rounded-full bg-muted/70 px-3 py-1 text-[12px] font-medium backdrop-blur-xs',
+            missed && !mine ? 'text-red-500' : 'text-muted-foreground',
           )}
         >
           <Icon className="size-3.5" />
@@ -202,7 +193,7 @@ export function MessageBubble({
   }
 
   const startPress = () => {
-    if (message.status) return; // can't react to unsent-yet messages
+    if (message.status) return;
     pressTimer.current = setTimeout(() => setPickerOpen(true), LONG_PRESS_MS);
   };
   const cancelPress = () => {
@@ -210,8 +201,6 @@ export function MessageBubble({
     pressTimer.current = null;
   };
 
-  // Vibe expressions: a cute centered "moment" — a glossy candy capsule with a
-  // soft glow, a frosted icon, and twinkling sparkles. Who sent it sits below.
   if (expression) {
     return (
       <div
@@ -226,7 +215,6 @@ export function MessageBubble({
           <ReactionPicker
             open={pickerOpen}
             mine={mine}
-            vibe={vibe}
             message={message}
             myReaction={myReaction}
             anchor={bubbleRef}
@@ -237,7 +225,6 @@ export function MessageBubble({
             onClose={() => setPickerOpen(false)}
           />
 
-          {/* entrance pop, then a gentle playful float */}
           <motion.div
             initial={{ scale: 0.3, opacity: 0, y: 16 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -262,7 +249,7 @@ export function MessageBubble({
           </motion.div>
         </div>
 
-        <span className="flex items-center gap-1 text-[11px] font-medium text-imsg-text-gray">
+        <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
           {mine ? 'You' : (sender?.display_name ?? 'Unknown')}
         </span>
       </div>
@@ -277,7 +264,7 @@ export function MessageBubble({
       )}
     >
       {showSenderLabel && (
-        <div className="mb-0.5 pl-12 text-[11px] text-imsg-text-gray">
+        <div className="mb-0.5 pl-12 text-[11px] text-muted-foreground">
           {sender?.display_name ?? 'Unknown'}
         </div>
       )}
@@ -293,8 +280,7 @@ export function MessageBubble({
             aria-hidden
             style={{ opacity: arrowOpacity, scale: arrowScale }}
             className={cn(
-              'pointer-events-none absolute bottom-1 flex size-7 items-center justify-center rounded-full bg-imsg-gray text-imsg-text-gray',
-              // received rows have a 36px avatar gutter — keep the arrow clear of it
+              'pointer-events-none absolute bottom-1 flex size-7 items-center justify-center rounded-full bg-muted text-muted-foreground',
               mine ? 'right-1' : 'left-10',
             )}
           >
@@ -343,7 +329,6 @@ export function MessageBubble({
           <ReactionPicker
             open={pickerOpen}
             mine={mine}
-            vibe={vibe}
             message={message}
             myReaction={myReaction}
             anchor={bubbleRef}
@@ -354,8 +339,6 @@ export function MessageBubble({
             onClose={() => setPickerOpen(false)}
           />
 
-          {/* Attachment bubbles are full-bleed images, so the reply quote sits
-              just above them rather than nested inside. */}
           {repliedTo && children && (
             <ReplyQuote
               mine={mine}
@@ -383,16 +366,14 @@ export function MessageBubble({
               children
                 ? 'overflow-hidden'
                 : 'px-3.5 py-1.75 whitespace-pre-wrap wrap-anywhere',
-              // background (not bg-color) so themed gradients paint too
               mine
-                ? 'text-white [background:var(--imsg-bubble-out-bg)]'
-                : 'bg-imsg-gray text-foreground',
+                ? 'text-white [background:var(--bubble-bg)]'
+                : 'bg-muted text-foreground',
               isLastInGroup && !children && 'tail',
               isLastInGroup && !children && (mine ? 'tail-out' : 'tail-in'),
               pending && 'opacity-60',
             )}
           >
-            {/* nested reply preview lives inside text bubbles (Telegram style) */}
             {repliedTo && !children && (
               <ReplyQuote
                 mine={mine}
@@ -417,7 +398,7 @@ export function MessageBubble({
           {message.edited_at && (
             <p
               className={cn(
-                'mt-0.5 text-[11px] text-imsg-text-gray',
+                'mt-0.5 text-[11px] text-muted-foreground',
                 mine ? 'text-right' : 'text-left',
               )}
             >
@@ -428,7 +409,7 @@ export function MessageBubble({
       </div>
 
       {mine && message.status === 'queued' && isLastInGroup && (
-        <div className="mt-0.5 text-right text-[11px] text-imsg-text-gray">
+        <div className="mt-0.5 text-right text-[11px] text-muted-foreground">
           Waiting for connection…
         </div>
       )}

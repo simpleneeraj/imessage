@@ -30,6 +30,7 @@ export function ExpressionBubble({
   return (
     <NoiseBackground
       animating
+      noiseIntensity={0.4}
       gradientColors={palette.gradient}
       containerClassName={cn('rounded-full p-0.5', pending && 'opacity-60')}
     >
@@ -37,12 +38,6 @@ export function ExpressionBubble({
         type="button"
         className="relative flex select-none items-center gap-2 rounded-full pr-2"
       >
-        {/* ambient glow */}
-        <div
-          aria-hidden
-          className={cn('absolute inset-0 rounded-full blur-xl', palette.glow)}
-        />
-
         {/* frosted icon disc */}
         {Icon && (
           <div

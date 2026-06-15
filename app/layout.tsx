@@ -1,15 +1,9 @@
-import type { Metadata, Viewport } from 'next';
-import { ThemeProvider } from 'next-themes';
-import { THEMES, DEFAULT_THEME } from '@/lib/themes';
-import './globals.css';
-import { Inter, Geist_Mono } from 'next/font/google';
+import './styles/globals.css';
 import { cn } from '@/lib/utils';
-
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono' });
-
-const interHeading = Inter({ subsets: ['latin'], variable: '--font-heading' });
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+import { ThemeProvider } from 'next-themes';
+import type { Metadata, Viewport } from 'next';
+import { THEMES, DEFAULT_THEME } from '@/lib/themes';
+import fonts from './fonts';
 
 const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
@@ -17,48 +11,35 @@ const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: {
-    default: 'Monarch — Private, End-to-End Encrypted Messenger',
-    template: '%s · Monarch',
-  },
-  description:
-    'Monarch is a beautifully crafted, end-to-end encrypted messenger. Tapback reactions, disappearing messages, encrypted photos and view-once media — your messages, your keys, on every device.',
-  applicationName: 'Monarch',
+  title: 'Love Quotes',
+  description: 'A small collection of words about love.',
+  applicationName: 'Love Quotes',
   keywords: [
-    'encrypted messenger',
-    'end-to-end encryption',
-    'private chat app',
-    'secure messaging',
-    'disappearing messages',
-    'E2EE chat',
+    'love quotes',
+    'romantic quotes',
+    'quotes about love',
+    'famous love quotes',
   ],
   openGraph: {
     type: 'website',
-    siteName: 'Monarch',
-    title: 'Monarch — Private, End-to-End Encrypted Messenger',
-    description:
-      'Beautifully crafted, end-to-end encrypted messaging. Your messages, your keys, on every device.',
-    images: [{ url: '/logo/android-chrome-512x512.png', width: 512, height: 512 }],
+    siteName: 'Love Quotes',
+    title: 'Love Quotes',
+    description: 'A small collection of words about love.',
+    images: [{ url: '/logo/icon-512.png', width: 512, height: 512 }],
   },
   twitter: {
     card: 'summary',
-    title: 'Monarch — Private, End-to-End Encrypted Messenger',
-    description:
-      'Beautifully crafted, end-to-end encrypted messaging. Your messages, your keys, on every device.',
-    images: ['/logo/android-chrome-512x512.png'],
+    title: 'Love Quotes',
+    description: 'A small collection of words about love.',
+    images: ['/logo/icon-512.png'],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Monarch',
+    title: 'Love Quotes',
   },
-  icons: {
-    icon: [
-      { url: '/logo/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/logo/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-    ],
-    apple: '/logo/apple-touch-icon.png',
-  },
+  // Icons come from the file conventions: app/favicon.ico, app/icon.tsx,
+  // app/apple-icon.tsx (no manual override here).
 };
 
 export const viewport: Viewport = {
@@ -84,13 +65,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(
-        'h-full antialiased',
-        'font-sans',
-        inter.variable,
-        interHeading.variable,
-        geistMono.variable,
-      )}
+      className={cn('h-full antialiased', fonts)}
       suppressHydrationWarning
     >
       <body className="h-full bg-background text-foreground">

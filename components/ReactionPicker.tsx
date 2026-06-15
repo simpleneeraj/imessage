@@ -8,9 +8,8 @@ import {
   IoArrowUndoOutline,
   IoCopyOutline,
 } from 'react-icons/io5';
-import type { Message, ReactionKind, VibeId } from '@/lib/types';
+import type { Message, ReactionKind } from '@/lib/types';
 import { REACTION_SETS, TapbackGlyph } from './Tapback';
-import { useReactionSet } from '@/lib/reactionSet';
 import { Menu, MenuItem, MenuPopup } from '@/components/ui/menu';
 import { iosMenu, iosMenuItem } from '@/components/ui/ios-menu';
 import { cn } from '@/lib/utils';
@@ -22,7 +21,6 @@ const menu = iosMenu();
 export function ReactionPicker({
   open,
   mine,
-  vibe = 'classic',
   message,
   myReaction,
   anchor,
@@ -34,7 +32,6 @@ export function ReactionPicker({
 }: {
   open: boolean;
   mine: boolean;
-  vibe?: VibeId;
   message: Message;
   myReaction: ReactionKind | null;
   anchor: RefObject<HTMLElement | null>;
@@ -44,10 +41,8 @@ export function ReactionPicker({
   onUnsend: () => void;
   onClose: () => void;
 }) {
-  const localSet = useReactionSet();
-  // a non-classic chat vibe brings its matching reaction set with it
-  const setId = vibe !== 'classic' ? vibe : localSet;
-  const tapbacks = REACTION_SETS[setId].items;
+  // One fixed set of classic iMessage tapbacks, like iOS.
+  const tapbacks = REACTION_SETS.classic.items;
   const canReply = !message.status && !message.deleted_at;
   const canCopy =
     !message.status && !message.deleted_at && Boolean(message.text);
@@ -106,8 +101,8 @@ export function ReactionPicker({
                 className={cn(
                   'flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors',
                   myReaction === kind
-                    ? 'bg-imsg-blue text-white'
-                    : 'text-imsg-text-gray hover:text-foreground',
+                    ? 'bg-primary text-white'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 <TapbackGlyph value={kind} className="size-5 text-current" />
