@@ -17,8 +17,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'New message';
   const options = {
     body: data.body || '',
-    icon: '/logo/android-chrome-192x192.png',
-    badge: '/logo/android-chrome-192x192.png',
+    icon: '/logo/icon-192.png',
+    badge: '/logo/icon-192.png',
     tag: data.tag || data.url || 'message',
     renotify: true,
     data: { url: data.url || '/chats' },
