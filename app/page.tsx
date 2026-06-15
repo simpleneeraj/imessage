@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import { LoveQuotes } from '@/components/LoveQuotes';
+import { siteConfig } from '@/lib/site-config';
 
-// Public landing — a plain love-quotes page. The chat is reachable only via the
-// secret door in the footer (triple-tap the ♥) or directly at /chats.
 export const metadata: Metadata = {
-  title: 'Love Quotes',
-  description: 'A small collection of words about love.',
+  title: siteConfig.title,
+  description: siteConfig.description,
   robots: { index: false, follow: false },
 };
 

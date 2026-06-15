@@ -3,7 +3,9 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { IoHeart, IoHeartOutline, IoSearch } from 'react-icons/io5';
+import { IoHeart, IoHeartOutline, IoLogoOctocat, IoSearch } from 'react-icons/io5';
+import Logo from './logo';
+import { siteConfig } from '@/lib/site-config';
 import {
   CATEGORIES,
   QUOTES,
@@ -156,12 +158,13 @@ export function LoveQuotes() {
       {/* Masthead */}
       <header className="sticky top-0 z-10 border-b border-[#e0d8c4] bg-[#f4f1ea]/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <span
-            className="text-[26px] leading-none text-[#382110]"
-            style={display}
+          <button
+            type="button"
+            onClick={enterChat}
+            className="transition-opacity active:opacity-70"
           >
-            Love Quotes
-          </span>
+            <Logo size="lg" parts={[...siteConfig.logoParts]} />
+          </button>
           <div className="ml-auto flex min-w-0 flex-1 items-center gap-2 rounded-md border border-[#d6cdb8] bg-white px-2.5 py-1.5 sm:max-w-xs">
             <IoSearch className="size-4 shrink-0 text-[#9b8e79]" />
             <input
@@ -254,24 +257,34 @@ export function LoveQuotes() {
 
       <footer className="border-t border-[#e0d8c4] py-6 text-center text-[12px] text-[#9b8e79]">
         <p>
-          Made with{' '}
-          <button
-            type="button"
-            onPointerDown={heartDown}
-            onPointerUp={heartUp}
-            onPointerLeave={heartCancel}
-            onPointerCancel={heartCancel}
-            onContextMenu={(e) => e.preventDefault()}
-            aria-label="heart"
-            className="cursor-pointer select-none px-0.5 align-baseline outline-none active:scale-95"
-            style={{ touchAction: 'manipulation' }}
-          >
-             <IoHeart className="size-2.5 text-rose-500" />
-          </button>{' '}
-          for the hopeless romantics.
+          Made with <IoHeart className="inline size-2.5 text-rose-500" /> for the hopeless romantics.
         </p>
         <p className="mt-1">Quote of the day provided by the ZenQuotes API.</p>
-        <p className="mt-1">© {new Date().getFullYear()} Love Quotes</p>
+        <p className="mt-1">© {new Date().getFullYear()} {siteConfig.name}</p>
+        <button
+          type="button"
+          onPointerDown={heartDown}
+          onPointerUp={heartUp}
+          onPointerLeave={heartCancel}
+          onPointerCancel={heartCancel}
+          onContextMenu={(e) => e.preventDefault()}
+          aria-label="secret entrance"
+          className="mt-3 cursor-pointer select-none outline-none"
+          style={{ touchAction: 'manipulation' }}
+        >
+          <IoLogoOctocat
+            className="size-5 text-[#b3a78f] transition-colors hover:text-[#382110]"
+            style={{ animation: 'octo-spin 3s ease-in-out infinite' }}
+          />
+        </button>
+        <style>{`
+          @keyframes octo-spin {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-15deg) scale(1.15); }
+            50% { transform: rotate(0deg) scale(1); }
+            75% { transform: rotate(15deg) scale(1.15); }
+          }
+        `}</style>
       </footer>
     </div>
   );
