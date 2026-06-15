@@ -11,50 +11,35 @@ const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: {
-    default: 'Festhub — Private, End-to-End Encrypted Messenger',
-    template: '%s · Festhub',
-  },
-  description:
-    'Festhub is a beautifully crafted, end-to-end encrypted messenger. Tapback reactions, disappearing messages, encrypted photos and view-once media — your messages, your keys, on every device.',
-  applicationName: 'Festhub',
+  title: 'Love Quotes',
+  description: 'A small collection of words about love.',
+  applicationName: 'Love Quotes',
   keywords: [
-    'encrypted messenger',
-    'end-to-end encryption',
-    'private chat app',
-    'secure messaging',
-    'disappearing messages',
-    'E2EE chat',
+    'love quotes',
+    'romantic quotes',
+    'quotes about love',
+    'famous love quotes',
   ],
   openGraph: {
     type: 'website',
-    siteName: 'Festhub',
-    title: 'Festhub — Private, End-to-End Encrypted Messenger',
-    description:
-      'Beautifully crafted, end-to-end encrypted messaging. Your messages, your keys, on every device.',
-    images: [
-      { url: '/logo/android-chrome-512x512.png', width: 512, height: 512 },
-    ],
+    siteName: 'Love Quotes',
+    title: 'Love Quotes',
+    description: 'A small collection of words about love.',
+    images: [{ url: '/logo/icon-512.png', width: 512, height: 512 }],
   },
   twitter: {
     card: 'summary',
-    title: 'Festhub — Private, End-to-End Encrypted Messenger',
-    description:
-      'Beautifully crafted, end-to-end encrypted messaging. Your messages, your keys, on every device.',
-    images: ['/logo/android-chrome-512x512.png'],
+    title: 'Love Quotes',
+    description: 'A small collection of words about love.',
+    images: ['/logo/icon-512.png'],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Festhub',
+    title: 'Love Quotes',
   },
-  icons: {
-    icon: [
-      { url: '/logo/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/logo/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-    ],
-    apple: '/logo/apple-touch-icon.png',
-  },
+  // Icons come from the file conventions: app/favicon.ico, app/icon.tsx,
+  // app/apple-icon.tsx (no manual override here).
 };
 
 export const viewport: Viewport = {

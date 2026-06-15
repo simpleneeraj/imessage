@@ -1,7 +1,14 @@
-import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
+import { LoveQuotes } from '@/components/LoveQuotes';
 
-// Single private space — the root just enters the app. AuthProvider (in the
-// (app) layout) shows the PIN gate when there's no session.
+// Public landing — a plain love-quotes page. The chat is reachable only via the
+// secret door in the footer (triple-tap the ♥) or directly at /chats.
+export const metadata: Metadata = {
+  title: 'Love Quotes',
+  description: 'A small collection of words about love.',
+  robots: { index: false, follow: false },
+};
+
 export default function HomePage() {
-  redirect('/chats');
+  return <LoveQuotes />;
 }

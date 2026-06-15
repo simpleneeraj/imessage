@@ -2,24 +2,23 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { IoAlertCircle, IoArrowForward, IoLockClosed } from 'react-icons/io5';
+import { IoAlertCircle, IoArrowForward } from 'react-icons/io5';
 import { authenticate, slugifyUsername } from '@/lib/auth';
 import type { Profile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
+import { Field, FieldLabel } from '@/components/ui/field';
 import {
   OTPField,
   OTPFieldInput,
   OTPFieldSeparator,
 } from '@/components/ui/otp-field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { IoLogoOctocat } from 'react-icons/io';
 import { Card, CardHeader, CardPanel } from './ui/card';
 
-// One unified flow: enter your name + a 4-digit PIN. If the account exists we
-// sign you in; if not we create it. Your name is your identity, and the PIN
-// also derives your end-to-end encryption keys.
+// Member sign-in: name + a 4-digit PIN. Existing member → sign in; new name →
+// create. (Behind the scenes the PIN also derives the E2EE keys, but nothing
+// here advertises that — this screen reads as a plain reading-list login.)
 export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
@@ -59,15 +58,22 @@ export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
           {/* Header */}
           <CardHeader className="flex flex-col items-center text-center">
             <div className="mb-4 flex size-16 items-center justify-center rounded-xl bg-accent">
-              <IoLogoOctocat className="size-9" />
+              <span
+                className="text-4xl leading-none"
+                style={{ fontFamily: 'var(--font-alice), Georgia, serif' }}
+              >
+                f
+              </span>
             </div>
 
-            <h1 className="text-2xl font-bold font-heading tracking-tight">
-              Let&apos;s Talk
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+              Love Quotes
+            </p>
+            <h1 className="mt-1 text-2xl font-bold font-heading tracking-tight">
+              Welcome back
             </h1>
             <p className="mt-3 text-sm leading-snug text-muted-foreground">
-              Enter your name and a 4-digit PIN — we&apos;ll sign you in, or set
-              you up if you&apos;re new.
+              Enter your name and PIN to continue.
             </p>
           </CardHeader>
           <CardPanel>
@@ -89,9 +95,6 @@ export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
                   autoFocus
                   enterKeyHint="next"
                 />
-                {handle && (
-                  <FieldDescription>You&apos;ll be @{handle}</FieldDescription>
-                )}
               </Field>
 
               <Field>
@@ -157,9 +160,8 @@ export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
                 <IoArrowForward />
               </Button>
             </form>
-            <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-              <IoLockClosed className="size-3 shrink-0" />
-              End-to-end encrypted. There&apos;s no PIN reset.
+            <p className="mt-5 text-center text-xs text-muted-foreground">
+              Members only · your reading list stays private.
             </p>
           </CardPanel>
         </Card>

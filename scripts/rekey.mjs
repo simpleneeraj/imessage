@@ -10,9 +10,14 @@
 
 import { readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
-const REF = 'yagdantmpfvkmqlgrhqj';
+// Project ref comes from the Supabase CLI link (never hardcoded).
+const REF = readFileSync(
+  new URL('../supabase/.temp/project-ref', import.meta.url),
+  'utf8',
+).trim();
 const APP_SALT = 'imsg-clone-e2ee-v1';
 const PBKDF2_ITERATIONS = 310_000;
 const subtle = globalThis.crypto.subtle;

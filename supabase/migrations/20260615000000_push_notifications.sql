@@ -28,8 +28,9 @@ create policy "own push subs" on public.push_subscriptions
   with check (user_id = (select auth.uid()));
 
 -- ---- fire the edge function on new messages ----
--- The shared secret lives in Supabase Vault (set out-of-band, never committed);
--- the edge function checks it via the x-notify-secret header.
+-- Both the function URL and the shared secret live in Supabase Vault (set
+-- out-of-band, never committed): `notify_fn_url` + `notify_secret`. The edge
+-- function verifies the secret via the x-notify-secret header.
 create or replace function public.notify_new_message()
 returns trigger
 language plpgsql
@@ -37,11 +38,17 @@ security definer
 set search_path = public, extensions, vault
 as $$
 declare
-  fn_url text := 'https://yagdantmpfvkmqlgrhqj.supabase.co/functions/v1/notify';
+  fn_url text;
   secret text;
 begin
+  select decrypted_secret into fn_url
+    from vault.decrypted_secrets where name = 'notify_fn_url' limit 1;
   select decrypted_secret into secret
     from vault.decrypted_secrets where name = 'notify_secret' limit 1;
+
+  if fn_url is null then
+    return new; -- not configured on this environment; skip quietly
+  end if;
 
   perform net.http_post(
     url := fn_url,
