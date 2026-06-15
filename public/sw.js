@@ -19,7 +19,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: origin + '/logo/icon-192.png',
-    badge: origin + '/logo/badge-72.png',
+    badge: origin + '/logo/badge-96.png',
     tag: data.tag || data.url || 'message',
     renotify: true,
     data: { url: data.url || '/chats' },

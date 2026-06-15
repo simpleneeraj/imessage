@@ -39,8 +39,43 @@ async function render(px) {
   return Buffer.from(await res.arrayBuffer());
 }
 
+async function renderBadge(px) {
+  const res = new ImageResponse(
+    {
+      type: 'div',
+      props: {
+        style: {
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'transparent',
+          color: '#ffffff',
+          fontFamily: 'Alice',
+          // Badges don't have to fit maskable safety zones, so make it a bit larger
+          fontSize: Math.round(px * 0.72),
+          fontWeight: 400,
+        },
+        children: 'f',
+      },
+    },
+    {
+      width: px,
+      height: px,
+      fonts: [{ name: 'Alice', data: font, weight: 400, style: 'normal' }],
+    },
+  );
+  return Buffer.from(await res.arrayBuffer());
+}
+
 for (const px of [192, 512]) {
   const buf = await render(px);
   writeFileSync(new URL(`../public/logo/icon-${px}.png`, import.meta.url), buf);
   console.log(`wrote public/logo/icon-${px}.png (${buf.length} bytes)`);
 }
+
+const badgeBuf = await renderBadge(96);
+writeFileSync(new URL('../public/logo/badge-96.png', import.meta.url), badgeBuf);
+console.log(`wrote public/logo/badge-96.png (${badgeBuf.length} bytes)`);
+
