@@ -73,6 +73,7 @@ export default function RootLayout({
           attribute="class"
           themes={THEMES}
           defaultTheme={DEFAULT_THEME}
+          enableSystem={false}
           enableColorScheme={false}
           disableTransitionOnChange
         >
