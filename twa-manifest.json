@@ -19,8 +19,8 @@
   "maskableIconUrl": "https://www.festhub.in/logo/icon-512.png",
   "webManifestUrl": "https://www.festhub.in/manifest.webmanifest",
   "fallbackType": "customtabs",
-  "appVersionName": "1.0.16",
-  "appVersionCode": 17,
+  "appVersionName": "1.0.17",
+  "appVersionCode": 18,
   "shortcuts": [],
   "signingKey": {
     "path": "./android.keystore",

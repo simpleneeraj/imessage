@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { idb } from '@/lib/idb';
 import { encryptAndUpload } from '@/lib/attachments';
+import { removeConversationLocally } from '@/lib/conversationStore';
 import { useAuth } from './AuthProvider';
 import { useMessages } from '@/hooks/useMessages';
 import { useEvents } from '@/hooks/useEvents';
@@ -223,10 +224,13 @@ function ChatThreadInner({
 
   const deleteForMe = () => {
     actions.hideConversation();
+    removeConversationLocally(id); // drop it now so it doesn't blink back
     router.push('/letters');
   };
   const deleteForEveryone = () => {
     actions.setDeleted(true);
+    // Admin keeps it (dimmed, to restore); for everyone else, remove it now.
+    if (!isAdmin) removeConversationLocally(id);
     router.push('/letters');
   };
   const restore = () => actions.setDeleted(false);

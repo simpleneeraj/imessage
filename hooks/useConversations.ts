@@ -6,6 +6,7 @@ import { idb } from "@/lib/idb";
 import { getConvKey } from "@/lib/keys";
 import { decryptEnvelope, isEnvelope } from "@/lib/crypto";
 import { setPreview } from "@/lib/previews";
+import { onConversationRemoved } from "@/lib/conversationStore";
 import { previewText } from "@/hooks/useMessages";
 import type { Conversation, Profile, Message } from "@/lib/types";
 
@@ -93,6 +94,14 @@ export function useConversations(userId: string | null) {
     if (!userId) return;
     let cancelled = false;
 
+    // Optimistic local removal (delete for me / delete for everyone) — drop it
+    // immediately so it doesn't blink back before the server round-trip lands.
+    const unsubRemoved = onConversationRemoved((id) => {
+      if (!cancelled) {
+        setConversations((cur) => cur.filter((c) => c.id !== id));
+      }
+    });
+
     // Cached copy first so the list renders instantly (and offline).
     void idb.getAll<Conversation>("conversations").then((cached) => {
       if (!cancelled && cached.length > 0) {
@@ -148,6 +157,7 @@ export function useConversations(userId: string | null) {
 
     return () => {
       cancelled = true;
+      unsubRemoved();
       void supabase.removeChannel(channel);
     };
   }, [userId, refetch]);
