@@ -64,7 +64,7 @@ export function ChatHeader({
     <header className="hairline-b shrink-0 bg-sidebar/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
       <div className="mx-auto grid w-full max-w-2xl grid-cols-[64px_1fr_64px] items-center px-2 pb-1.5 pt-1">
         <Link
-          href="/chats"
+          href="/letters"
           aria-label="Back to conversations"
           className="flex h-11 items-center justify-start pl-1 text-primary active:opacity-60 md:invisible"
         >

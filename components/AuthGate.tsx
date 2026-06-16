@@ -14,9 +14,10 @@ import {
   OTPFieldSeparator,
 } from '@/components/ui/otp-field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { siteConfig } from '@/lib/site-config';
 import { Card, CardHeader, CardPanel } from './ui/card';
 
-// Member sign-in: name + a 4-digit PIN. Existing member → sign in; new name →
+// Member sign-in: name + a 6-digit PIN. Existing member → sign in; new name →
 // create. (Behind the scenes the PIN also derives the E2EE keys, but nothing
 // here advertises that — this screen reads as a plain reading-list login.)
 export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
@@ -27,14 +28,14 @@ export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
 
   const handle = slugifyUsername(name);
   const nameValid = Boolean(handle);
-  const canSubmit = nameValid && pin.length === 4 && !submitting;
+  const canSubmit = nameValid && pin.length === 6 && !submitting;
 
   async function submit() {
     if (!nameValid) {
       setServerError('Please enter a name with at least 2 letters or numbers.');
       return;
     }
-    if (pin.length !== 4) return;
+    if (pin.length !== 6) return;
     setServerError('');
     setSubmitting(true);
     const result = await authenticate(name, pin);
@@ -58,11 +59,13 @@ export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
           {/* Header */}
           <CardHeader className="flex flex-col items-center text-center">
             <div className="mb-4 flex size-16 items-center justify-center rounded-xl bg-accent">
-              <span className="font-heading text-4xl leading-none">f</span>
+              <span className="font-heading text-4xl leading-none">
+                {siteConfig.name.charAt(0)}
+              </span>
             </div>
 
             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
-              Love Quotes
+              {siteConfig.name}
             </p>
             <h1 className="mt-1 text-2xl font-bold font-heading tracking-tight">
               Welcome back
@@ -95,30 +98,38 @@ export function AuthGate({ onReady }: { onReady: (profile: Profile) => void }) {
               <Field>
                 <FieldLabel>PIN</FieldLabel>
                 <OTPField
-                  length={4}
+                  length={6}
                   value={pin}
                   onValueChange={setPin}
                   onValueComplete={() => void submit()}
                   mask
-                  aria-label="4-digit PIN"
-                  className="justify-center gap-3 w-full"
+                  aria-label="6-digit PIN"
+                  className="justify-center gap-2 w-full"
                   size="lg"
                 >
                   <OTPFieldInput
-                    aria-label="PIN digit 1 of 4"
+                    aria-label="PIN digit 1 of 6"
                     inputMode="numeric"
                   />
                   <OTPFieldInput
-                    aria-label="PIN digit 2 of 4"
+                    aria-label="PIN digit 2 of 6"
+                    inputMode="numeric"
+                  />
+                  <OTPFieldInput
+                    aria-label="PIN digit 3 of 6"
                     inputMode="numeric"
                   />
                   <OTPFieldSeparator />
                   <OTPFieldInput
-                    aria-label="PIN digit 3 of 4"
+                    aria-label="PIN digit 4 of 6"
                     inputMode="numeric"
                   />
                   <OTPFieldInput
-                    aria-label="PIN digit 4 of 4"
+                    aria-label="PIN digit 5 of 6"
+                    inputMode="numeric"
+                  />
+                  <OTPFieldInput
+                    aria-label="PIN digit 6 of 6"
                     inputMode="numeric"
                   />
                 </OTPField>

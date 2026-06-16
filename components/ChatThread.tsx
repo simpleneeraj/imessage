@@ -223,11 +223,11 @@ function ChatThreadInner({
 
   const deleteForMe = () => {
     actions.hideConversation();
-    router.push('/chats');
+    router.push('/letters');
   };
   const deleteForEveryone = () => {
     actions.setDeleted(true);
-    router.push('/chats');
+    router.push('/letters');
   };
   const restore = () => actions.setDeleted(false);
 

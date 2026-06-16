@@ -143,7 +143,7 @@ const TIERS = [
       'Light & dark themes',
     ],
     cta: 'Start messaging',
-    href: '/chats',
+    href: '/letters',
     highlight: false,
   },
   {
@@ -383,7 +383,7 @@ export function Landing() {
             </a>
           </div>
           <Link
-            href="/chats"
+            href="/letters"
             className="ml-auto flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-transform hover:scale-[1.03] active:scale-95"
           >
             Open App <IoArrowForward className="size-3.5" />
@@ -439,7 +439,7 @@ export function Landing() {
               className="mt-9 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
             >
               <Link
-                href="/chats"
+                href="/letters"
                 className="group flex items-center gap-2 rounded-full bg-linear-to-r from-[#5e5ce6] to-[#af52de] px-7 py-3.5 text-[15px] font-semibold shadow-lg shadow-[#5e5ce6]/30 transition-transform hover:scale-[1.04] active:scale-95"
               >
                 Start messaging — free
@@ -612,7 +612,7 @@ export function Landing() {
             encrypted message.
           </p>
           <Link
-            href="/chats"
+            href="/letters"
             className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-[15px] font-bold text-black transition-transform hover:scale-[1.04] active:scale-95"
           >
             Claim your crown <IoArrowForward className="size-4" />
@@ -635,7 +635,7 @@ export function Landing() {
             <a href="#pricing" className="hover:text-white/70">
               Pricing
             </a>
-            <Link href="/chats" className="hover:text-white/70">
+            <Link href="/letters" className="hover:text-white/70">
               Open App
             </Link>
           </div>

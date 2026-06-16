@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
   const payload = JSON.stringify({
     title,
     body: 'New message',
-    url: `/chat/${conversation_id}`,
+    url: `/letters/${conversation_id}`,
     tag: `conv-${conversation_id}`,
   });
 

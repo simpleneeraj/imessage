@@ -11,7 +11,7 @@ import { useViewportHeight } from '@/lib/useViewportHeight';
 // and caches survive navigation.
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const inDetail = pathname !== '/chats';
+  const inDetail = pathname !== '/letters';
   useViewportHeight();
 
   return (

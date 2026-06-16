@@ -120,7 +120,7 @@ export function LoveQuotes({ data }: { data: QuotesData }) {
   // Secret door: type the unlock phrase into the newsletter box → open chat.
   function tryUnlock() {
     if (email.trim().toLowerCase() === UNLOCK) {
-      router.push('/chats');
+      router.push('/letters');
       return;
     }
     setSubscribed(true);
@@ -132,11 +132,22 @@ export function LoveQuotes({ data }: { data: QuotesData }) {
   function handleLogoTap() {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
-      router.push('/chats');
+      router.push('/letters');
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     lastTapRef.current = now;
+  }
+
+  // Secret door: press & hold the "made with love" heart to slip into the chat.
+  // Looks like a decorative flourish; only a deliberate ~0.7s hold opens it.
+  const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function startHold() {
+    holdRef.current = setTimeout(() => router.push('/letters'), 700);
+  }
+  function cancelHold() {
+    if (holdRef.current) clearTimeout(holdRef.current);
+    holdRef.current = null;
   }
 
   return (
@@ -269,6 +280,34 @@ export function LoveQuotes({ data }: { data: QuotesData }) {
               </button>
             </form>
           )}
+        </section>
+
+        {/* "Love Quotes" card — also the quiet way in: press & hold (~0.7s) to
+            open the chat. Reads as a decorative footer card; a tap does nothing. */}
+        <section className="mt-10">
+          <button
+            type="button"
+            aria-label={siteConfig.name}
+            onPointerDown={startHold}
+            onPointerUp={cancelHold}
+            onPointerLeave={cancelHold}
+            onPointerCancel={cancelHold}
+            onContextMenu={(e) => e.preventDefault()}
+            className="block w-full select-none rounded-lg border border-[#e0d8c4] bg-linear-to-b from-[#fbf4df] to-white p-6 text-center transition-transform active:scale-[0.99]"
+          >
+            <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-rose-500/10 text-rose-500">
+              <IoHeart className="size-6" />
+            </span>
+            <h3 className="font-quote mt-3 text-[18px] font-bold capitalize text-[#382110]">
+              {siteConfig.name}
+            </h3>
+            <p className="mt-1 text-[13px] leading-snug text-[#7a6a55]">
+              {siteConfig.description}
+            </p>
+            <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-[#b3a78f]">
+              Made with love
+            </p>
+          </button>
         </section>
       </main>
 

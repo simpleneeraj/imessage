@@ -16,7 +16,7 @@ self.addEventListener('push', (event) => {
   }
   const title = data.title || 'New message';
   const origin = self.location.origin;
-  const url = data.url || '/chats';
+  const url = data.url || '/letters';
   const options = {
     body: data.body || '',
     icon: origin + '/logo/icon-192.png',
@@ -54,7 +54,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/chats';
+  const url = event.notification.data?.url || '/letters';
   event.waitUntil(
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })

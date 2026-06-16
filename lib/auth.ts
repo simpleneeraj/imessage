@@ -19,8 +19,8 @@ import type { Profile } from './types';
 // with "Confirm email" disabled nothing is ever sent.
 const EMAIL_DOMAIN = 'example.com';
 export const USERNAME_RE = /^[a-zA-Z0-9_]{2,24}$/;
-// Login secret is a 4-digit PIN (it also derives the E2EE keys).
-export const PIN_RE = /^\d{4}$/;
+// Login secret is a 6-digit PIN (it also derives the E2EE keys).
+export const PIN_RE = /^\d{6}$/;
 
 export type AuthResult =
   | { ok: true; profile: Profile }
@@ -208,7 +208,7 @@ export async function authenticate(
     };
   }
   if (!PIN_RE.test(pin)) {
-    return { ok: false, error: 'Enter your 4-digit PIN.' };
+    return { ok: false, error: 'Enter your 6-digit PIN.' };
   }
 
   // PBKDF2 is expensive — derive once and reuse for whichever path we take.

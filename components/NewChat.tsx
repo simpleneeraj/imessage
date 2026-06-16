@@ -60,14 +60,14 @@ export function NewChat() {
       setError("Could not set up encryption for this conversation.");
       return;
     }
-    router.replace(`/chat/${convId}`);
+    router.replace(`/letters/${convId}`);
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <header className="hairline-b shrink-0 bg-sidebar/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className="mx-auto grid w-full max-w-2xl grid-cols-[1fr_auto_1fr] items-center px-4 py-3">
-          <Link href="/chats" className="justify-self-start text-[17px] text-primary active:opacity-60">
+          <Link href="/letters" className="justify-self-start text-[17px] text-primary active:opacity-60">
             Cancel
           </Link>
           <h1 className="text-[17px] font-semibold">New Message</h1>

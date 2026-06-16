@@ -84,7 +84,7 @@ function Row({
   const deletedForAll = Boolean(conv.deleted_at);
   return (
     <Link
-      href={`/chat/${conv.id}`}
+      href={`/letters/${conv.id}`}
       className={cn(
         'flex cursor-pointer items-center gap-3 pl-4 transition-colors hover:bg-muted/40 active:bg-muted/50',
         active && 'md:bg-muted/60',
@@ -185,7 +185,7 @@ export function ConversationList() {
                   previews[conversation.id]?.text ??
                   'Matched conversation'
                 }
-                active={pathname === `/chat/${conversation.id}`}
+                active={pathname === `/letters/${conversation.id}`}
               />
             ))
           )
@@ -210,7 +210,7 @@ export function ConversationList() {
                 previews[conv.id]?.text ??
                 (conv.last_message_at ? 'Message' : 'No messages yet')
               }
-              active={pathname === `/chat/${conv.id}`}
+              active={pathname === `/letters/${conv.id}`}
             />
           ))
         )}
