@@ -5,12 +5,7 @@ import { motion, useMotionValue, useTransform } from 'motion/react';
 import { IoArrowUndo, IoCall, IoImage, IoVideocam } from 'react-icons/io5';
 import { cn } from '@/lib/utils';
 import type { MessageRow } from '@/lib/group';
-import type {
-  Message,
-  Profile,
-  Reaction,
-  ReactionKind,
-} from '@/lib/types';
+import type { Message, Profile, Reaction, ReactionKind } from '@/lib/types';
 import { Avatar } from './Avatar';
 import { ReactionPicker } from './ReactionPicker';
 import { ReactionBadges } from './ReactionBadges';
@@ -98,6 +93,7 @@ export function MessageBubble({
   row,
   sender,
   me,
+  read,
   reactions,
   repliedTo,
   repliedSender,
@@ -111,6 +107,8 @@ export function MessageBubble({
   row: MessageRow;
   sender: Profile | undefined;
   me: string;
+  /** Whether the other participant(s) have read this message (own messages). */
+  read?: boolean;
   reactions: Reaction[];
   repliedTo?: Message;
   repliedSender?: Profile;
@@ -216,6 +214,7 @@ export function MessageBubble({
             open={pickerOpen}
             mine={mine}
             message={message}
+            read={read}
             myReaction={myReaction}
             anchor={bubbleRef}
             onPick={(kind) => onReact(message.id, kind)}
@@ -330,6 +329,7 @@ export function MessageBubble({
             open={pickerOpen}
             mine={mine}
             message={message}
+            read={read}
             myReaction={myReaction}
             anchor={bubbleRef}
             onPick={(kind) => onReact(message.id, kind)}
@@ -368,7 +368,7 @@ export function MessageBubble({
                 : 'px-3.5 py-1.75 whitespace-pre-wrap wrap-anywhere',
               mine
                 ? 'text-white [background:var(--bubble-bg)]'
-                : 'bg-(--muted) text-foreground',
+                : 'bg-muted text-foreground',
               isLastInGroup && !children && 'tail',
               isLastInGroup && !children && (mine ? 'tail-out' : 'tail-in'),
               pending && 'opacity-60',

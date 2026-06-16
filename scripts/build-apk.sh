@@ -12,8 +12,8 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TWA_DIR="${TWA_DIR:-$HOME/Ideas/festhub-app}"
-OUT="${APK_OUT:-$HOME/Desktop/festhub.apk}"
+TWA_DIR="${TWA_DIR:-$HOME/Ideas/imessage-clone/twa-build}"
+OUT="${APK_OUT:-$HOME/Ideas/imessage-clone/dist/festhub-release.apk}"
 
 # Load secrets from .env without echoing them (only if not already in the env).
 if [[ -z "${APK_KEYSTORE_PASSWORD:-}" && -f "$REPO_DIR/.env" ]]; then
@@ -46,3 +46,27 @@ printf 'no\n' | bubblewrap build
 
 cp -f "$TWA_DIR/app-release-signed.apk" "$OUT"
 echo "✓ Signed APK → $OUT"
+
+# Publish into the web app so the site can serve a download link at
+# /downloads/festhub.apk (committed + deployed with the site). The GetTheApp
+# CTA reads version.json to show the live version + size.
+PUBLIC_DIR="$REPO_DIR/public/downloads"
+mkdir -p "$PUBLIC_DIR"
+cp -f "$TWA_DIR/app-release-signed.apk" "$PUBLIC_DIR/festhub.apk"
+
+VERSION="$(python3 -c "import json;print(json.load(open('$TWA_DIR/twa-manifest.json')).get('appVersionName',''))")"
+SIZE="$(wc -c < "$PUBLIC_DIR/festhub.apk" | tr -d ' ')"
+python3 - "$PUBLIC_DIR/version.json" "$VERSION" "$SIZE" <<'PY'
+import datetime, json, sys
+path, version, size = sys.argv[1], sys.argv[2], int(sys.argv[3])
+json.dump(
+    {
+        "version": version,
+        "size": size,
+        "built": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    },
+    open(path, "w"),
+    indent=2,
+)
+PY
+echo "✓ Published → $PUBLIC_DIR/festhub.apk (v$VERSION). Commit + deploy to publish."

@@ -1,4 +1,5 @@
 import type { IconType } from "react-icons";
+import { cn } from "@/lib/utils";
 import {
   HiAcademicCap,
   HiBadgeCheck,
@@ -164,13 +165,67 @@ export const REACTION_SETS: Record<
   },
 };
 
+// Brand color per token, used when a glyph is rendered with `colored` (e.g. the
+// in-call reaction picker + the floating reactions). Message-bubble tapbacks
+// keep inheriting currentColor so they sit quietly on the bubble.
+const TAPBACK_COLORS: Record<string, string> = {
+  heart: "text-rose-500",
+  like: "text-sky-500",
+  dislike: "text-slate-400",
+  haha: "text-amber-400",
+  emphasis: "text-violet-500",
+  question: "text-fuchsia-500",
+  sparkles: "text-amber-300",
+  fire: "text-orange-500",
+  gift: "text-pink-500",
+  cake: "text-rose-400",
+  moon: "text-indigo-400",
+  star: "text-yellow-400",
+  bolt: "text-yellow-500",
+  flag: "text-red-500",
+  eye: "text-cyan-500",
+  bell: "text-amber-500",
+  hand: "text-orange-400",
+  approve: "text-emerald-500",
+  bulb: "text-yellow-400",
+  trending: "text-green-500",
+  clipboard: "text-teal-500",
+  news: "text-slate-500",
+  gradcap: "text-indigo-500",
+  cash: "text-emerald-500",
+  chart: "text-sky-500",
+  briefcase: "text-amber-600",
+  clock: "text-slate-500",
+  key: "text-yellow-600",
+  scale: "text-slate-500",
+  palette: "text-pink-500",
+  camera: "text-slate-600",
+  photo: "text-sky-500",
+  mic: "text-rose-500",
+  music: "text-purple-500",
+  puzzle: "text-emerald-500",
+  globe: "text-sky-500",
+  map: "text-emerald-500",
+  ticket: "text-amber-500",
+  cloud: "text-sky-400",
+  truck: "text-orange-500",
+  plane: "text-sky-500",
+};
+
 export function TapbackGlyph({
   value,
   className,
+  colored,
 }: {
   value: string;
   className?: string;
+  /** Render in the token's brand color instead of currentColor. */
+  colored?: boolean;
 }) {
   const Icon = TAPBACK_ICONS[value] ?? HiHeart;
-  return <Icon className={className} />;
+  return (
+    <Icon
+      className={cn(className, colored && (TAPBACK_COLORS[value] ?? "text-rose-500"))}
+    />
+  );
 }

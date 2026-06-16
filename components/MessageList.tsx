@@ -122,6 +122,12 @@ export function MessageList({
 
   const rows = buildRows(messages, { isGroup, me });
   const profilesById = new Map(participants.map((p) => [p.id, p]));
+  // Other participants' read markers — used to label each own message as
+  // Read/Delivered when long-pressed.
+  const others = participantsMeta.filter((p) => p.user_id !== me);
+  const readByAll = (createdAt: string) =>
+    others.length > 0 &&
+    others.every((p) => p.last_read_at !== null && p.last_read_at >= createdAt);
   const messagesById = new Map(messages.map((m) => [m.id, m]));
   const last = messages[messages.length - 1];
   const lastOwn = [...messages].reverse().find((m) => m.sender_id === me);
@@ -196,6 +202,7 @@ export function MessageList({
                     row={row}
                     sender={profilesById.get(row.message.sender_id)}
                     me={me}
+                    read={readByAll(row.message.created_at)}
                     onJumpTo={jumpToMessage}
                     reactions={reactions.get(row.message.id) ?? []}
                     repliedTo={

@@ -39,9 +39,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Brand surface colors (match the TWA themeColor/themeColorDark). Pure white
+  // here made the Android status-bar icons render white-on-white in the TWA;
+  // these light/dark surfaces give the status bar proper icon contrast.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: '(prefers-color-scheme: light)', color: '#e9e2d7' },
+    { media: '(prefers-color-scheme: dark)', color: '#1b1a16' },
   ],
   width: 'device-width',
   initialScale: 1,

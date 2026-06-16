@@ -6,6 +6,7 @@ import { useAtom } from 'jotai';
 import { IoHeart, IoHeartOutline, IoMailOutline, IoSearch } from 'react-icons/io5';
 import { motion } from 'motion/react';
 import Logo from './logo';
+import { GetTheApp } from './GetTheApp';
 import { siteConfig } from '@/lib/site-config';
 import { likedQuotesAtom } from '@/lib/store/likes';
 import { likeCount, type Quote } from '@/lib/quotes-data';
@@ -227,6 +228,9 @@ export function LoveQuotes({ data }: { data: QuotesData }) {
             })
           )}
         </section>
+
+        {/* Get the Android app */}
+        <GetTheApp />
 
         {/* Newsletter — the secret door (type the unlock phrase) */}
         <section className="mt-10 rounded-lg border border-[#e0d8c4] bg-white p-6 text-center">

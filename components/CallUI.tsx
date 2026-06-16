@@ -65,6 +65,20 @@ function Stream({
   );
 }
 
+// Audio-only sink for the remote stream. The full-screen <Stream> video only
+// mounts for video calls, so without this an audio call attached the remote
+// MediaStream to nothing and you heard silence. A plain (hidden) <audio>
+// element plays the remote audio whenever we're not already routing it through
+// the video element.
+function RemoteAudio({ stream }: { stream: MediaStream | null }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el && el.srcObject !== stream) el.srcObject = stream;
+  }, [stream]);
+  return <audio ref={ref} autoPlay className="hidden" />;
+}
+
 function RoundButton({
   onClick,
   onVideo,
@@ -125,7 +139,7 @@ function FadingChatBubble({ msg }: { msg: CallChatMessage }) {
             'flex max-w-[80%] flex-col gap-0.5 rounded-2xl px-3 py-1.5 shadow-lg backdrop-blur-md',
             msg.mine
               ? 'self-end bg-primary/80 text-white'
-              : 'self-start bg-white/20 text-white',
+              : 'self-start bg-accent/20 text-white',
           )}
         >
           {!msg.mine && (
@@ -139,8 +153,6 @@ function FadingChatBubble({ msg }: { msg: CallChatMessage }) {
     </AnimatePresence>
   );
 }
-
-
 
 /* ─── Draggable PiP ─── */
 function DraggablePiP({
@@ -312,6 +324,10 @@ export function CallUI() {
             <Stream stream={remoteStream} className="size-full object-cover" />
           )}
 
+          {/* Play remote audio when it isn't already coming through the video
+              element (audio calls, or a video call before the camera track). */}
+          {!onVideo && <RemoteAudio stream={remoteStream} />}
+
           {/* Name + status/duration up top */}
           <div
             className={cn(
@@ -404,6 +420,7 @@ export function CallUI() {
                 >
                   <TapbackGlyph
                     value={r.emoji}
+                    colored
                     className="size-12 drop-shadow-lg"
                   />
                 </motion.span>
@@ -411,9 +428,10 @@ export function CallUI() {
             </AnimatePresence>
           </div>
 
-          {/* In-call chat messages floating overlay */}
+          {/* In-call chat messages floating overlay (centered, width-capped so
+              it doesn't stretch edge-to-edge on wide/desktop screens) */}
           {status === 'active' && chatMessages.length > 0 && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-36 z-25 flex max-h-56 flex-col gap-1.5 overflow-hidden px-4">
+            <div className="pointer-events-none absolute inset-x-0 bottom-24 z-25 mx-auto flex w-full max-w-md flex-col gap-1.5 overflow-hidden px-4">
               <AnimatePresence>
                 {chatMessages.slice(-8).map((msg) => (
                   <FadingChatBubble key={msg.id} msg={msg} />
@@ -422,14 +440,15 @@ export function CallUI() {
             </div>
           )}
 
-          {/* Chat input bar */}
+          {/* Chat input bar — centered, width-capped, and anchored just above
+              the controls instead of floating mid-screen */}
           <AnimatePresence>
             {chatOpen && status === 'active' && (
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 16 }}
-                className="absolute inset-x-0 bottom-32 z-30 px-4"
+                className="absolute inset-x-0 bottom-4 z-30 mx-auto w-full max-w-md px-4"
               >
                 <div
                   className={cn(
@@ -521,7 +540,11 @@ export function CallUI() {
                         }}
                         className="flex size-10 items-center justify-center"
                       >
-                        <TapbackGlyph value={token} className="size-7" />
+                        <TapbackGlyph
+                          value={token}
+                          colored
+                          className="size-7"
+                        />
                       </motion.button>
                     ))}
                   </motion.div>

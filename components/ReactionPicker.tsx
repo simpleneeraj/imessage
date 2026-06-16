@@ -18,10 +18,18 @@ import { cn } from '@/lib/utils';
 // to the bubble: a frosted reaction pill floating above a frosted action card.
 const menu = iosMenu();
 
+const META_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
 export function ReactionPicker({
   open,
   mine,
   message,
+  read,
   myReaction,
   anchor,
   onPick,
@@ -33,6 +41,8 @@ export function ReactionPicker({
   open: boolean;
   mine: boolean;
   message: Message;
+  /** Other participant(s) have read this (own messages) → "Read" vs "Delivered". */
+  read?: boolean;
   myReaction: ReactionKind | null;
   anchor: RefObject<HTMLElement | null>;
   onPick: (kind: ReactionKind) => void;
@@ -54,6 +64,18 @@ export function ReactionPicker({
     void navigator.clipboard?.writeText(message.text ?? '');
   };
 
+  // Long-press caption: when this message was sent + its read/received state.
+  const statusLabel = message.status
+    ? message.status === 'queued'
+      ? 'Waiting'
+      : 'Sending'
+    : mine
+      ? read
+        ? 'Read'
+        : 'Delivered'
+      : 'Received';
+  const metaLabel = `${statusLabel} · ${META_FMT.format(new Date(message.created_at))}`;
+
   return (
     <Menu open={open} onOpenChange={(o) => !o && onClose()}>
       <MenuPopup
@@ -70,6 +92,19 @@ export function ReactionPicker({
             mine ? 'items-end' : 'items-start',
           )}
         >
+          {/* Time + read/received caption */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.02 }}
+            className={menu.surface({
+              class:
+                'rounded-full px-3 py-1 text-[11px] font-medium text-muted-foreground',
+            })}
+          >
+            {metaLabel}
+          </motion.div>
+
           {/* Reaction pill */}
           <motion.div
             initial={{ scale: 0.6, opacity: 0, y: 8 }}
