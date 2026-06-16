@@ -11,7 +11,7 @@ import {
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { iceServers } from '@/lib/webrtc';
-import { recordCall } from '@/lib/callRecord';
+import { recordCall, recordCallChat } from '@/lib/callRecord';
 import { useAuth } from './AuthProvider';
 
 export type CallMedia = 'audio' | 'video';
@@ -436,10 +436,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       if (!callId || !text.trim()) return;
       const id = crypto.randomUUID();
       const senderName = profile?.display_name ?? 'You';
-      setChatMessages((prev) => [...prev, { id, text: text.trim(), sender: senderName, mine: true, ts: Date.now() }]);
-      void signal({ kind: 'chat', callId, id, text: text.trim(), sender: senderName });
+      const trimmed = text.trim();
+      setChatMessages((prev) => [...prev, { id, text: trimmed, sender: senderName, mine: true, ts: Date.now() }]);
+      void signal({ kind: 'chat', callId, id, text: trimmed, sender: senderName });
+      // Also persist it to the conversation timeline (with an in-call badge) so
+      // the message survives after the call ends.
+      if (convIdRef.current && userId) {
+        void recordCallChat(convIdRef.current, userId, trimmed);
+      }
     },
-    [signal, profile?.display_name],
+    [signal, profile?.display_name, userId],
   );
 
   // --- incoming signaling (kept in a ref so the channel sub never goes stale) ---

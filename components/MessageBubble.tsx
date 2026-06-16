@@ -138,6 +138,8 @@ export function MessageBubble({
   const expression =
     message.payload?.kind === 'expression' ? message.payload : null;
   const call = message.payload?.kind === 'call' ? message.payload : null;
+  const inCall =
+    message.payload?.kind === 'text' && message.payload.inCall === true;
 
   const SWIPE_THRESHOLD = 56;
   const dragX = useMotionValue(0);
@@ -386,6 +388,12 @@ export function MessageBubble({
 
             {children || (
               <span className="relative z-2 text-sm">
+                {inCall && (
+                  <IoCall
+                    aria-label="Sent during call"
+                    className="mb-0.5 mr-1 inline size-3 opacity-70"
+                  />
+                )}
                 {message.text === null ? (
                   <span className="italic opacity-70">Unable to decrypt</span>
                 ) : (

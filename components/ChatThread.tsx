@@ -128,6 +128,9 @@ function ChatThreadInner({
     reactions,
     participantsMeta,
     typingUserIds,
+    hasMore,
+    loadingOlder,
+    loadOlder,
     send,
     sendPayload,
     react,
@@ -298,6 +301,9 @@ function ChatThreadInner({
           participantsMeta={participantsMeta}
           typingUserIds={typingUserIds}
           events={events}
+          hasMore={hasMore}
+          loadingOlder={loadingOlder}
+          onLoadOlder={() => void loadOlder()}
           onReact={(messageId, kind) => void react(messageId, kind)}
           onReply={setReplyingTo}
           onUnsend={(msg) => void unsend(msg)}

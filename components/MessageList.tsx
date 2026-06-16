@@ -19,8 +19,11 @@ import { Receipt } from './Receipt';
 import { AttachmentBubble } from './AttachmentBubble';
 import { ViewOnceBubble } from './ViewOnceBubble';
 import { SystemMessage, systemEventText } from './SystemMessage';
+import { Spinner } from '@/components/ui/spinner';
 
 const NEAR_BOTTOM_PX = 150;
+// Start fetching the previous page once the user scrolls within this of the top.
+const TOP_LOAD_PX = 220;
 
 function EditSheet({
   message,
@@ -81,6 +84,9 @@ export function MessageList({
   participantsMeta,
   typingUserIds,
   events = [],
+  hasMore = false,
+  loadingOlder = false,
+  onLoadOlder,
   onReact,
   onReply,
   onUnsend,
@@ -94,6 +100,9 @@ export function MessageList({
   participantsMeta: ParticipantMeta[];
   typingUserIds: string[];
   events?: ConversationEvent[];
+  hasMore?: boolean;
+  loadingOlder?: boolean;
+  onLoadOlder?: () => void;
   onReact: (messageId: string, kind: ReactionKind) => void;
   onReply: (message: Message) => void;
   onUnsend: (message: Message) => void;
@@ -102,7 +111,31 @@ export function MessageList({
   const scrollRef = useRef<HTMLDivElement>(null);
   const firstRenderRef = useRef(true);
   const lastKeyRef = useRef<string | null>(null);
+  // Captured (scrollHeight, scrollTop) at the moment an older-page load starts,
+  // so we can restore the viewport after the prepended messages render.
+  const pendingAnchorRef = useRef<{ height: number; top: number } | null>(null);
   const [editing, setEditing] = useState<Message | null>(null);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el || !onLoadOlder || !hasMore || loadingOlder) return;
+    if (el.scrollTop <= TOP_LOAD_PX && !pendingAnchorRef.current) {
+      pendingAnchorRef.current = { height: el.scrollHeight, top: el.scrollTop };
+      onLoadOlder();
+    }
+  };
+
+  // After older messages prepend, keep the viewport where it was (content grew
+  // above the fold) instead of jumping.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    const anchor = pendingAnchorRef.current;
+    if (el && anchor) {
+      el.scrollTop = el.scrollHeight - anchor.height + anchor.top;
+      pendingAnchorRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run on message changes
+  }, [messages]);
 
   // Tapping a reply quote scrolls to the original and briefly flashes it.
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -176,9 +209,15 @@ export function MessageList({
   return (
     <div
       ref={scrollRef}
+      onScroll={handleScroll}
       className="chat-canvas flex-1 overflow-y-auto overscroll-contain"
     >
-      <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col justify-end px-4 pb-2 pt-2">
+      <div className="relative mx-auto flex min-h-full w-full max-w-2xl flex-col justify-end px-4 pb-2 pt-2">
+        {loadingOlder && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center py-2">
+            <Spinner className="size-5 text-muted-foreground" />
+          </div>
+        )}
         {timeline.map((item) =>
           item.kind === 'event' ? (
             <SystemMessage

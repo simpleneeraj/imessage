@@ -224,7 +224,7 @@ export async function unwrapConvKey(
 // ---------- message envelope ----------
 
 export type MessagePayload =
-  | { kind: "text"; text: string }
+  | { kind: "text"; text: string; inCall?: boolean }
   | {
       kind: "expression";
       id: string;

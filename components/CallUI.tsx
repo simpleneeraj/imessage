@@ -81,14 +81,14 @@ function RemoteAudio({ stream }: { stream: MediaStream | null }) {
 
 function RoundButton({
   onClick,
-  onVideo,
   engaged,
   danger,
   label,
   children,
 }: {
   onClick: () => void;
-  onVideo: boolean;
+  /** Accepted for call-site compatibility; the call screen is always dark. */
+  onVideo?: boolean;
   engaged?: boolean;
   danger?: boolean;
   label: string;
@@ -105,12 +105,8 @@ function RoundButton({
         danger
           ? 'bg-red-500 text-white'
           : engaged
-            ? onVideo
-              ? 'bg-white text-black'
-              : 'bg-foreground text-background'
-            : onVideo
-              ? 'bg-white/15 text-white backdrop-blur'
-              : 'bg-foreground/10 text-foreground',
+            ? 'bg-white text-black'
+            : 'bg-white/15 text-white backdrop-blur',
       )}
     >
       {children}
@@ -315,11 +311,22 @@ export function CallUI() {
         exit={{ opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className={cn(
-          'fixed inset-0 z-60 flex flex-col',
-          onVideo ? 'bg-black text-white' : 'bg-background text-foreground',
+          'fixed inset-0 z-60 flex flex-col text-white',
+          onVideo
+            ? 'bg-black'
+            : 'bg-linear-to-b from-zinc-700 via-zinc-900 to-black',
         )}
       >
         <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+          {/* Soft top glow so the avatar/audio state reads as an intentional
+              call background rather than a flat fill. */}
+          {!onVideo && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(75%_50%_at_50%_0%,rgba(255,255,255,0.10),transparent_70%)]"
+            />
+          )}
+
           {onVideo && (
             <Stream stream={remoteStream} className="size-full object-cover" />
           )}
@@ -340,10 +347,7 @@ export function CallUI() {
               key={subtitle}
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                'text-[15px] tabular-nums',
-                onVideo ? 'text-white/80' : 'text-muted-foreground',
-              )}
+              className="text-[15px] tabular-nums text-white/80"
             >
               {subtitle}
             </motion.p>
@@ -450,14 +454,7 @@ export function CallUI() {
                 exit={{ opacity: 0, y: 16 }}
                 className="absolute inset-x-0 bottom-4 z-30 mx-auto w-full max-w-md px-4"
               >
-                <div
-                  className={cn(
-                    'flex items-center gap-2 rounded-full px-3 py-1.5 shadow-xl',
-                    onVideo
-                      ? 'bg-white/15 backdrop-blur-xl'
-                      : 'bg-muted/90 backdrop-blur',
-                  )}
-                >
+                <div className="flex items-center gap-2 rounded-full bg-zinc-800/90 px-3 py-1.5 shadow-xl ring-1 ring-white/10 backdrop-blur-md">
                   <input
                     ref={chatInputRef}
                     type="text"
@@ -472,12 +469,7 @@ export function CallUI() {
                     placeholder="Message…"
                     maxLength={200}
                     autoFocus
-                    className={cn(
-                      'flex-1 bg-transparent text-[15px] outline-none placeholder:opacity-50',
-                      onVideo
-                        ? 'text-white placeholder:text-white/50'
-                        : 'text-foreground placeholder:text-muted-foreground',
-                    )}
+                    className="flex-1 bg-transparent text-[15px] text-white outline-none placeholder:text-white/50"
                   />
                   <motion.button
                     type="button"
@@ -485,11 +477,8 @@ export function CallUI() {
                     onClick={handleSendChat}
                     disabled={!chatText.trim()}
                     className={cn(
-                      'flex size-8 items-center justify-center rounded-full transition-opacity',
-                      chatText.trim()
-                        ? 'bg-primary text-white opacity-100'
-                        : 'opacity-30',
-                      onVideo && !chatText.trim() ? 'text-white' : '',
+                      'flex size-8 items-center justify-center rounded-full text-white transition-opacity',
+                      chatText.trim() ? 'bg-primary opacity-100' : 'opacity-30',
                     )}
                   >
                     <IoSend className="size-4" />
@@ -522,10 +511,7 @@ export function CallUI() {
                     initial={{ opacity: 0, y: 12, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 12, scale: 0.9 }}
-                    className={cn(
-                      'flex items-center gap-1 rounded-full px-2 py-1.5 shadow-lg',
-                      onVideo ? 'bg-white/15 backdrop-blur' : 'bg-muted',
-                    )}
+                    className="flex items-center gap-1 rounded-full bg-zinc-800/90 px-2 py-1.5 shadow-lg ring-1 ring-white/10 backdrop-blur"
                   >
                     {reactionItems.map((token) => (
                       <motion.button

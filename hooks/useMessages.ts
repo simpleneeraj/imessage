@@ -22,6 +22,9 @@ import type {
 const TYPING_THROTTLE_MS = 2000;
 const TYPING_EXPIRY_MS = 4000;
 const READ_THROTTLE_MS = 3000;
+// Messages are loaded one page at a time (newest first); older pages are pulled
+// in via keyset pagination as the user scrolls up.
+const PAGE_SIZE = 30;
 
 export function previewText(msg: Message): string {
   if (msg.deleted_at) return "Message unsent";
@@ -94,12 +97,24 @@ export function useMessages(conversationId: string, userId: string | null) {
   const [participantsMeta, setParticipantsMeta] = useState<ParticipantMeta[]>([]);
   const [typingUserIds, setTypingUserIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+
+  // Refs mirror state so loadOlder() can stay referentially stable and read the
+  // current values without re-subscribing.
+  const messagesRef = useRef<Message[]>([]);
+  const hasMoreRef = useRef(true);
+  const loadingOlderRef = useRef(false);
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const lastTypingSent = useRef(0);
   const lastReadSent = useRef(0);
   const readTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const updatePreview = useCallback(
     (msg: Message) => {
@@ -121,7 +136,11 @@ export function useMessages(conversationId: string, userId: string | null) {
       .getAllByIndex<Message>("messages", "by_conv", conversationId)
       .then((cached) => {
         if (cancelled || cached.length === 0) return;
-        setMessages((current) => merge(current, cached));
+        // Paint only the newest page from cache; older pages load on scroll-up.
+        const tail = [...cached]
+          .sort((a, b) => a.created_at.localeCompare(b.created_at))
+          .slice(-PAGE_SIZE);
+        setMessages((current) => merge(current, tail));
         setLoading(false);
       });
 
@@ -130,7 +149,7 @@ export function useMessages(conversationId: string, userId: string | null) {
       .select("*")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: false })
-      .limit(100)
+      .limit(PAGE_SIZE)
       .then(async ({ data }) => {
         if (cancelled || !data) {
           setLoading(false);
@@ -140,6 +159,8 @@ export function useMessages(conversationId: string, userId: string | null) {
         if (cancelled) return;
         setMessages((current) => merge(current, fresh));
         setLoading(false);
+        hasMoreRef.current = data.length === PAGE_SIZE;
+        setHasMore(hasMoreRef.current);
         void idb.putAll("messages", fresh);
         const newest = fresh[0];
         if (newest) updatePreview(newest);
@@ -508,6 +529,51 @@ export function useMessages(conversationId: string, userId: string | null) {
     }
   }, [conversationId, userId]);
 
+  // Keyset pagination: fetch the page of messages older than the oldest one
+  // currently loaded. Falls back to the local cache when offline so scroll-up
+  // still works without a connection.
+  const loadOlder = useCallback(async () => {
+    if (loadingOlderRef.current || !hasMoreRef.current) return;
+    const oldest = messagesRef.current[0];
+    if (!oldest) return;
+    loadingOlderRef.current = true;
+    setLoadingOlder(true);
+    try {
+      const { data } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .lt("created_at", oldest.created_at)
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+
+      let older = (data ?? []) as Message[];
+      if (older.length === 0) {
+        // Offline / request failed — serve older rows from the cache instead.
+        const cached = await idb.getAllByIndex<Message>(
+          "messages",
+          "by_conv",
+          conversationId
+        );
+        older = cached
+          .filter((m) => m.created_at < oldest.created_at)
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))
+          .slice(0, PAGE_SIZE);
+      }
+
+      if (older.length > 0) {
+        const decrypted = await Promise.all(older.map(decryptMessage));
+        setMessages((current) => merge(current, decrypted));
+        void idb.putAll("messages", older);
+      }
+      hasMoreRef.current = older.length === PAGE_SIZE;
+      setHasMore(hasMoreRef.current);
+    } finally {
+      loadingOlderRef.current = false;
+      setLoadingOlder(false);
+    }
+  }, [conversationId]);
+
   const sendTyping = useCallback(() => {
     if (!userId || !channelRef.current) return;
     const now = Date.now();
@@ -526,6 +592,9 @@ export function useMessages(conversationId: string, userId: string | null) {
     participantsMeta,
     typingUserIds,
     loading,
+    hasMore,
+    loadingOlder,
+    loadOlder,
     send,
     sendPayload,
     react,
