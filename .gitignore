@@ -47,3 +47,5 @@ scripts/.rekey-secrets.json
 .backups/
 
 certificates
+twa-build/
+dist/
